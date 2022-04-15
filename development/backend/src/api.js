@@ -413,6 +413,7 @@ const tomeActive = async (req, res) => {
 // 全件一覧
 const allActive = async (req, res) => {
   performance.mark('allactive-start');
+
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -427,23 +428,24 @@ const allActive = async (req, res) => {
     offset = 0;
     limit = 10;
   }
-
+  // TODO: 先に実行
   const searchRecordQs = `select record_id, title, created_by, created_at, application_group, updated_at from record where status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
+  const r = pool.query(searchRecordQs, [limit, offset]);
+  const recordCountQs = 'select count(*) from record where status = "open"';
+  const s = pool.query(recordCountQs);
 
-  const [recordResult] = await pool.query(searchRecordQs, [limit, offset]);
   // mylog(recordResult);
   let count = 0;
 
-  const items = await getItems(user, recordResult);
+  const [recordResult] = await r;
+  const i = getItems(user, recordResult);
 
-  const recordCountQs = 'select count(*) from record where status = "open"';
-
-  // TODO: 先に実行
-  const [recordCountResult] = await pool.query(recordCountQs);
+  const [recordCountResult] = await s;
   if (recordCountResult.length === 1) {
     count = recordCountResult[0]['count(*)'];
   }
 
+  const items = await i;
   res.send({ count: count, items: items });
   performance.mark('allactive-end');
   performance.measure('allActive', 'allactive-start', 'allactive-end');
