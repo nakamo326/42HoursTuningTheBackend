@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const jimp = require('jimp');
 
 const mysql = require('mysql2/promise');
-
+const { performance, PerformanceObserver } = require('perf_hooks');
 
 // MEMO: 設定項目はここを参考にした
 // https://github.com/sidorares/node-mysql2#api-and-configuration
@@ -29,7 +29,19 @@ const mylog = (obj) => {
   console.log(obj);
 };
 
+// パフォーマンス測定関数
+// https://dev.to/bearer/measuring-performance-in-node-js-with-performance-hooks-585p
+const perfObserver = new PerformanceObserver((items) => {
+  items.getEntries().forEach((entry) => {
+    mylog(entry);
+  });
+});
+
+perfObserver.observe({ entryTypes: ["measure"], buffer: true });
+
 const getLinkedUser = async (headers) => {
+  performance.mark('getlinkeduser-start')
+
   const target = headers['x-app-key'];
   mylog(target);
   const qs = `select * from session where value = ?`;
@@ -41,6 +53,8 @@ const getLinkedUser = async (headers) => {
     return undefined;
   }
 
+  performance.mark('getlinkeduser-end');
+  performance.measure('getLinkedUser', 'getlinkeduser-start', 'getlinkeduser-end');
   return { user_id: rows[0].linked_user_id };
 };
 
@@ -49,6 +63,7 @@ const filePath = 'file/';
 // POST /records
 // 申請情報登録
 const postRecords = async (req, res) => {
+  performance.mark('postrecords-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -103,11 +118,14 @@ const postRecords = async (req, res) => {
   }
 
   res.send({ recordId: newId });
+  performance.mark('postrecords-end');
+  performance.measure('postRecords', 'postrecords-start', 'postrecords-end');
 };
 
 // GET /records/{recordId}
 // 文書詳細取得
 const getRecord = async (req, res) => {
+  performance.mark('getrecord-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -213,11 +231,14 @@ const getRecord = async (req, res) => {
   );
 
   res.send(recordInfo);
+  performance.mark('getrecord-end');
+  performance.measure('getRecord', 'getrecord-start', 'getrecord-end');
 };
 
 // GET /record-views/tomeActive
 // 自分宛一覧
 const tomeActive = async (req, res) => {
+  performance.mark('tomeactive-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -371,11 +392,14 @@ const tomeActive = async (req, res) => {
   }
 
   res.send({ count: count, items: items });
+  performance.mark('tomeactive-end');
+  performance.measure('tomeActive', 'tomeactive-start', 'tomeactive-end');
 };
 
 // GET /record-views/allActive
 // 全件一覧
 const allActive = async (req, res) => {
+  performance.mark('allactive-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -571,11 +595,14 @@ const allActive = async (req, res) => {
   }
 
   res.send({ count: count, items: items });
+  performance.mark('allactive-end');
+  performance.measure('allActive', 'allactive-start', 'allactive-end');
 };
 
 // GET /record-views/allClosed
 // クローズ一覧
 const allClosed = async (req, res) => {
+  performance.mark('allclosed-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -686,11 +713,14 @@ const allClosed = async (req, res) => {
   }
 
   res.send({ count: count, items: items });
+  performance.mark('allclosed-end');
+  performance.measure('allClosed', 'allclosed-start', 'allclosed-end');
 };
 
 // GET /record-views/mineActive
 // 自分が申請一覧
 const mineActive = async (req, res) => {
+  performance.mark('mineactive-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -801,11 +831,14 @@ const mineActive = async (req, res) => {
   }
 
   res.send({ count: count, items: items });
+  performance.mark('mineactive-end');
+  performance.measure('mineActive', 'mineactive-start', 'mineactive-end');
 };
 
 // PUT records/{recordId}
 // 申請更新
 const updateRecord = async (req, res) => {
+  performance.mark('updaterecord-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -822,11 +855,14 @@ const updateRecord = async (req, res) => {
   ]);
 
   res.send({});
+  performance.mark('updaterecord-end');
+  performance.measure('updateRecord', 'updaterecord-start', 'updaterecord-end');
 };
 
 // GET records/{recordId}/comments
 // コメントの取得
 const getComments = async (req, res) => {
+  performance.mark('getcomments-end');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -885,11 +921,14 @@ const getComments = async (req, res) => {
   }
 
   res.send({ items: commentList });
+  performance.mark('getcomments-end');
+  performance.measure('getComments', 'getcomments-start', 'getcomments-end');
 };
 
 // POST records/{recordId}/comments
 // コメントの投稿
 const postComments = async (req, res) => {
+  performance.mark('postcomments-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -915,11 +954,14 @@ const postComments = async (req, res) => {
   );
 
   res.send({});
+  performance.mark('postcomments-end');
+  performance.measure('postComments', 'postcomments-start', 'postcomments-end');
 };
 
 // GET categories/
 // カテゴリーの取得
 const getCategories = async (req, res) => {
+  performance.mark('getcategories-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -940,11 +982,14 @@ const getCategories = async (req, res) => {
   }
 
   res.send({ items });
+  performance.mark('getcategories-end');
+  performance.measure('getCategories', 'getcategories-start', 'getcategories-end');
 };
 
 // POST files/
 // ファイルのアップロード
 const postFiles = async (req, res) => {
+  performance.mark('postfiles-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -985,11 +1030,14 @@ const postFiles = async (req, res) => {
   );
 
   res.send({ fileId: newId, thumbFileId: newThumbId });
+  performance.mark('postfiles-end');
+  performance.measure('postFiles', 'postfiles-start', 'postfiles-end');
 };
 
 // GET records/{recordId}/files/{itemId}
 // 添付ファイルのダウンロード
 const getRecordItemFile = async (req, res) => {
+  performance.mark('getrecorditemfile-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -1027,11 +1075,14 @@ const getRecordItemFile = async (req, res) => {
   mylog(base64);
 
   res.send({ data: base64, name: fileInfo.name });
+  performance.mark('getrecorditemfile-end');
+  performance.measure('getRecordItemFile', 'getrecorditemfile-start', 'getrecorditemfile-end'); 
 };
 
 // GET records/{recordId}/files/{itemId}/thumbnail
 // 添付ファイルのサムネイルダウンロード
 const getRecordItemFileThumbnail = async (req, res) => {
+  performance.mark('getrecorditemfilethumbnail-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -1069,6 +1120,8 @@ const getRecordItemFileThumbnail = async (req, res) => {
   mylog(base64);
 
   res.send({ data: base64, name: fileInfo.name });
+  performance.mark('getrecorditemfilethumbnail-end');
+  performance.measure('getRecordItemFileThumbnail', 'getrecorditemfilethumbnail-start', 'getrecorditemfilethumbnail-end'); 
 };
 
 module.exports = {
