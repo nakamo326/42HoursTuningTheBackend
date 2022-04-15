@@ -5,7 +5,6 @@ const jimp = require('jimp');
 
 const mysql = require('mysql2/promise');
 
-
 // MEMO: 設定項目はここを参考にした
 // https://github.com/sidorares/node-mysql2#api-and-configuration
 // https://github.com/mysqljs/mysql
@@ -64,7 +63,7 @@ const postRecords = async (req, res) => {
   let [rows] = await pool.query(
     `select * from group_member where user_id = ?
     AND is_primary = true`,
-    [user.user_id],
+    [user.user_id]
   );
 
   if (rows.length !== 1) {
@@ -90,7 +89,7 @@ const postRecords = async (req, res) => {
       body.categoryId,
       userPrimary.group_id,
       user.user_id,
-    ],
+    ]
   );
 
   for (const e of body.fileIdList) {
@@ -98,7 +97,7 @@ const postRecords = async (req, res) => {
       `insert into record_item_file
         (linked_record_id, linked_file_id, linked_thumbnail_file_id, created_at)
         values (?, ?, ?, now())`,
-      [`${newId}`, `${e.fileId}`, `${e.thumbFileId}`],
+      [`${newId}`, `${e.fileId}`, `${e.thumbFileId}`]
     );
   }
 
@@ -150,7 +149,9 @@ const getRecord = async (req, res) => {
 
   const line = recordResult[0];
 
-  const [primaryResult] = await pool.query(searchPrimaryGroupQs, [line.created_by]);
+  const [primaryResult] = await pool.query(searchPrimaryGroupQs, [
+    line.created_by,
+  ]);
   if (primaryResult.length === 1) {
     const primaryGroupId = primaryResult[0].group_id;
 
@@ -160,7 +161,9 @@ const getRecord = async (req, res) => {
     }
   }
 
-  const [appGroupResult] = await pool.query(searchGroupQs, [line.application_group]);
+  const [appGroupResult] = await pool.query(searchGroupQs, [
+    line.application_group,
+  ]);
   if (appGroupResult.length === 1) {
     recordInfo.applicationGroupName = appGroupResult[0].name;
   }
@@ -170,7 +173,9 @@ const getRecord = async (req, res) => {
     recordInfo.createdByName = userResult[0].name;
   }
 
-  const [categoryResult] = await pool.query(searchCategoryQs, [line.category_id]);
+  const [categoryResult] = await pool.query(searchCategoryQs, [
+    line.category_id,
+  ]);
   if (categoryResult.length === 1) {
     recordInfo.categoryName = categoryResult[0].name;
   }
@@ -209,7 +214,7 @@ const getRecord = async (req, res) => {
 	VALUES
 	(?, ?, now())
 	ON DUPLICATE KEY UPDATE access_time = now()`,
-    [`${recordId}`, `${user.user_id}`],
+    [`${recordId}`, `${user.user_id}`]
   );
 
   res.send(recordInfo);
@@ -290,8 +295,10 @@ const tomeActive = async (req, res) => {
   const searchGroupQs = 'select * from group_info where group_id = ?';
   const searchThumbQs =
     'select * from record_item_file where linked_record_id = ? order by item_id asc limit 1';
-  const countQs = 'select count(*) from record_comment where linked_record_id = ?';
-  const searchLastQs = 'select * from record_last_access where user_id = ? and record_id = ?';
+  const countQs =
+    'select count(*) from record_comment where linked_record_id = ?';
+  const searchLastQs =
+    'select * from record_last_access where user_id = ? and record_id = ?';
 
   for (let i = 0; i < recordResult.length; i++) {
     const resObj = {
@@ -340,7 +347,10 @@ const tomeActive = async (req, res) => {
       commentCount = countResult[0]['count(*)'];
     }
 
-    const [lastResult] = await pool.query(searchLastQs, [user.user_id, recordId]);
+    const [lastResult] = await pool.query(searchLastQs, [
+      user.user_id,
+      recordId,
+    ]);
     if (lastResult.length === 1) {
       mylog(updatedAt);
       const updatedAtNum = Date.parse(updatedAt);
@@ -399,7 +409,6 @@ const allActive = async (req, res) => {
   mylog(recordResult);
 
   const items = Array(recordResult.length);
-  let count = 0;
 
   // 'select name from user where user_id = ?';
   const searchUserQs = 'select * from user where user_id = ?';
@@ -408,8 +417,10 @@ const allActive = async (req, res) => {
   // 'select item_id from record_item_file where linked_record_id = ? order by item_id asc limit 1';
   const searchThumbQs =
     'select * from record_item_file where linked_record_id = ? order by item_id asc limit 1';
-  const countQs = 'select count(*) from record_comment where linked_record_id = ?';
-  const searchLastQs = 'select * from record_last_access where user_id = ? and record_id = ?';
+  const countQs =
+    'select count(*) from record_comment where linked_record_id = ?';
+  const searchLastQs =
+    'select * from record_last_access where user_id = ? and record_id = ?';
 
   await Promise.all(
     recordResult.map(async (record, i) => {
@@ -426,7 +437,7 @@ const allActive = async (req, res) => {
         thumbNailItemId: null,
         updatedAt: '',
       };
-  
+
       const line = record;
       mylog(line);
       // recordResultで必要なカラムはこれだけ？
@@ -440,28 +451,31 @@ const allActive = async (req, res) => {
       let thumbNailItemId = null;
       let commentCount = 0;
       let isUnConfirmed = true;
-  
+
       const [userResult] = await pool.query(searchUserQs, [createdBy]);
       if (userResult.length === 1) {
         createdByName = userResult[0].name;
       }
-  
+
       const [groupResult] = await pool.query(searchGroupQs, [applicationGroup]);
       if (groupResult.length === 1) {
         applicationGroupName = groupResult[0].name;
       }
-  
+
       const [itemResult] = await pool.query(searchThumbQs, [recordId]);
       if (itemResult.length === 1) {
         thumbNailItemId = itemResult[0].item_id;
       }
-  
+
       const [countResult] = await pool.query(countQs, [recordId]);
       if (countResult.length === 1) {
         commentCount = countResult[0]['count(*)'];
       }
-  
-      const [lastResult] = await pool.query(searchLastQs, [user.user_id, recordId]);
+
+      const [lastResult] = await pool.query(searchLastQs, [
+        user.user_id,
+        recordId,
+      ]);
       if (lastResult.length === 1) {
         mylog(updatedAt);
         const updatedAtNum = Date.parse(updatedAt);
@@ -470,7 +484,7 @@ const allActive = async (req, res) => {
           isUnConfirmed = false;
         }
       }
-  
+
       resObj.recordId = recordId;
       resObj.title = line.title;
       resObj.applicationGroup = applicationGroup;
@@ -482,89 +496,14 @@ const allActive = async (req, res) => {
       resObj.isUnConfirmed = isUnConfirmed;
       resObj.thumbNailItemId = thumbNailItemId;
       resObj.updatedAt = updatedAt;
-  
+
       items[i] = resObj;
-    }),
+    })
   );
-
-  /*
-  for (let i = 0; i < recordResult.length; i++) {
-    const resObj = {
-      recordId: null,
-      title: '',
-      applicationGroup: null,
-      applicationGroupName: null,
-      createdBy: null,
-      createdByName: null,
-      createAt: '',
-      commentCount: 0,
-      isUnConfirmed: true,
-      thumbNailItemId: null,
-      updatedAt: '',
-    };
-
-    const line = recordResult[i];
-    mylog(line);
-    // recordResultで必要なカラムはこれだけ？
-    const recordId = recordResult[i].record_id;
-    const createdBy = line.created_by;
-    const applicationGroup = line.application_group;
-    const updatedAt = line.updated_at;
-    //
-    let createdByName = null;
-    let applicationGroupName = null;
-    let thumbNailItemId = null;
-    let commentCount = 0;
-    let isUnConfirmed = true;
-
-    const [userResult] = await pool.query(searchUserQs, [createdBy]);
-    if (userResult.length === 1) {
-      createdByName = userResult[0].name;
-    }
-
-    const [groupResult] = await pool.query(searchGroupQs, [applicationGroup]);
-    if (groupResult.length === 1) {
-      applicationGroupName = groupResult[0].name;
-    }
-
-    const [itemResult] = await pool.query(searchThumbQs, [recordId]);
-    if (itemResult.length === 1) {
-      thumbNailItemId = itemResult[0].item_id;
-    }
-
-    const [countResult] = await pool.query(countQs, [recordId]);
-    if (countResult.length === 1) {
-      commentCount = countResult[0]['count(*)'];
-    }
-
-    const [lastResult] = await pool.query(searchLastQs, [user.user_id, recordId]);
-    if (lastResult.length === 1) {
-      mylog(updatedAt);
-      const updatedAtNum = Date.parse(updatedAt);
-      const accessTimeNum = Date.parse(lastResult[0].access_time);
-      if (updatedAtNum <= accessTimeNum) {
-        isUnConfirmed = false;
-      }
-    }
-
-    resObj.recordId = recordId;
-    resObj.title = line.title;
-    resObj.applicationGroup = applicationGroup;
-    resObj.applicationGroupName = applicationGroupName;
-    resObj.createdBy = createdBy;
-    resObj.createdByName = createdByName;
-    resObj.createAt = line.created_at;
-    resObj.commentCount = commentCount;
-    resObj.isUnConfirmed = isUnConfirmed;
-    resObj.thumbNailItemId = thumbNailItemId;
-    resObj.updatedAt = updatedAt;
-
-    items[i] = resObj;
-  }
-  */
 
   const recordCountQs = 'select count(*) from record where status = "open"';
 
+  let count = 0;
   const [recordCountResult] = await pool.query(recordCountQs);
   if (recordCountResult.length === 1) {
     count = recordCountResult[0]['count(*)'];
@@ -603,8 +542,10 @@ const allClosed = async (req, res) => {
   const searchGroupQs = 'select * from group_info where group_id = ?';
   const searchThumbQs =
     'select * from record_item_file where linked_record_id = ? order by item_id asc limit 1';
-  const countQs = 'select count(*) from record_comment where linked_record_id = ?';
-  const searchLastQs = 'select * from record_last_access where user_id = ? and record_id = ?';
+  const countQs =
+    'select count(*) from record_comment where linked_record_id = ?';
+  const searchLastQs =
+    'select * from record_last_access where user_id = ? and record_id = ?';
 
   for (let i = 0; i < recordResult.length; i++) {
     const resObj = {
@@ -653,7 +594,10 @@ const allClosed = async (req, res) => {
       commentCount = countResult[0]['count(*)'];
     }
 
-    const [lastResult] = await pool.query(searchLastQs, [user.user_id, recordId]);
+    const [lastResult] = await pool.query(searchLastQs, [
+      user.user_id,
+      recordId,
+    ]);
     if (lastResult.length === 1) {
       mylog(updatedAt);
       const updatedAtNum = Date.parse(updatedAt);
@@ -708,7 +652,11 @@ const mineActive = async (req, res) => {
 
   const searchRecordQs = `select * from record where created_by = ? and status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
 
-  const [recordResult] = await pool.query(searchRecordQs, [user.user_id, limit, offset]);
+  const [recordResult] = await pool.query(searchRecordQs, [
+    user.user_id,
+    limit,
+    offset,
+  ]);
   mylog(recordResult);
 
   const items = Array(recordResult.length);
@@ -718,8 +666,10 @@ const mineActive = async (req, res) => {
   const searchGroupQs = 'select * from group_info where group_id = ?';
   const searchThumbQs =
     'select * from record_item_file where linked_record_id = ? order by item_id asc limit 1';
-  const countQs = 'select count(*) from record_comment where linked_record_id = ?';
-  const searchLastQs = 'select * from record_last_access where user_id = ? and record_id = ?';
+  const countQs =
+    'select count(*) from record_comment where linked_record_id = ?';
+  const searchLastQs =
+    'select * from record_last_access where user_id = ? and record_id = ?';
 
   for (let i = 0; i < recordResult.length; i++) {
     const resObj = {
@@ -768,7 +718,10 @@ const mineActive = async (req, res) => {
       commentCount = countResult[0]['count(*)'];
     }
 
-    const [lastResult] = await pool.query(searchLastQs, [user.user_id, recordId]);
+    const [lastResult] = await pool.query(searchLastQs, [
+      user.user_id,
+      recordId,
+    ]);
     if (lastResult.length === 1) {
       mylog(updatedAt);
       const updatedAtNum = Date.parse(updatedAt);
@@ -793,7 +746,8 @@ const mineActive = async (req, res) => {
     items[i] = resObj;
   }
 
-  const recordCountQs = 'select count(*) from record where created_by = ? and status = "open"';
+  const recordCountQs =
+    'select count(*) from record where created_by = ? and status = "open"';
 
   const [recordCountResult] = await pool.query(recordCountQs, [user.user_id]);
   if (recordCountResult.length === 1) {
@@ -857,7 +811,9 @@ const getComments = async (req, res) => {
     };
     const line = commentResult[i];
 
-    const [primaryResult] = await pool.query(searchPrimaryGroupQs, [line.created_by]);
+    const [primaryResult] = await pool.query(searchPrimaryGroupQs, [
+      line.created_by,
+    ]);
     if (primaryResult.length === 1) {
       const primaryGroupId = primaryResult[0].group_id;
 
@@ -905,13 +861,13 @@ const postComments = async (req, res) => {
     insert into record_comment
     (linked_record_id, value, created_by, created_at)
     values (?,?,?, now());`,
-    [`${recordId}`, `${value}`, user.user_id],
+    [`${recordId}`, `${value}`, user.user_id]
   );
 
   await pool.query(
     `
     update record set updated_at = now() where record_id = ?;`,
-    [`${recordId}`],
+    [`${recordId}`]
   );
 
   res.send({});
@@ -968,7 +924,10 @@ const postFiles = async (req, res) => {
   mylog(image.bitmap.width);
   mylog(image.bitmap.height);
 
-  const size = image.bitmap.width < image.bitmap.height ? image.bitmap.width : image.bitmap.height;
+  const size =
+    image.bitmap.width < image.bitmap.height
+      ? image.bitmap.width
+      : image.bitmap.height;
   await image.cover(size, size);
 
   await image.writeAsync(`${filePath}${newThumbId}_thumb_${name}`);
@@ -976,12 +935,12 @@ const postFiles = async (req, res) => {
   await pool.query(
     `insert into file (file_id, path, name)
         values (?, ?, ?)`,
-    [`${newId}`, `${filePath}${newId}_${name}`, `${name}`],
+    [`${newId}`, `${filePath}${newId}_${name}`, `${name}`]
   );
   await pool.query(
     `insert into file (file_id, path, name)
         values (?, ?, ?)`,
-    [`${newThumbId}`, `${filePath}${newThumbId}_thumb_${name}`, `thumb_${name}`],
+    [`${newThumbId}`, `${filePath}${newThumbId}_thumb_${name}`, `thumb_${name}`]
   );
 
   res.send({ fileId: newId, thumbFileId: newThumbId });
@@ -1011,7 +970,7 @@ const getRecordItemFile = async (req, res) => {
     r.item_id = ?
     and
     r.linked_file_id = f.file_id`,
-    [`${recordId}`, `${itemId}`],
+    [`${recordId}`, `${itemId}`]
   );
 
   if (rows.length !== 1) {
@@ -1053,7 +1012,7 @@ const getRecordItemFileThumbnail = async (req, res) => {
     r.item_id = ?
     and
     r.linked_thumbnail_file_id = f.file_id`,
-    [`${recordId}`, `${itemId}`],
+    [`${recordId}`, `${itemId}`]
   );
 
   if (rows.length !== 1) {
