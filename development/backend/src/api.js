@@ -392,7 +392,8 @@ const allActive = async (req, res) => {
   }
 
   // record内のステータスがopenのエントリの'全てのカラム'を更新日昇順、申請日？降順で並び替え、offset ~ limitまで
-  const searchRecordQs = `select record_id, created_by, application_group, updated_at from record where status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
+  // select record_id, created_by, application_group, updated_at from record where status = "open" order by updated_at desc, record_id asc limit ? offset ?;
+  const searchRecordQs = `select * from record where status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
 
   const [recordResult] = await pool.query(searchRecordQs, [limit, offset]);
   mylog(recordResult);
@@ -400,11 +401,13 @@ const allActive = async (req, res) => {
   const items = Array(recordResult.length);
   let count = 0;
 
-  const searchUserQs = 'select name from user where user_id = ?';
-  const searchGroupQs = 'select name from group_info where group_id = ?';
+  // 'select name from user where user_id = ?';
+  const searchUserQs = 'select * from user where user_id = ?';
+  // 'select name from group_info where group_id = ?';
+  const searchGroupQs = 'select * from group_info where group_id = ?';
+  // 'select item_id from record_item_file where linked_record_id = ? order by item_id asc limit 1';
   const searchThumbQs =
-    'select item_id from record_item_file where linked_record_id = ? order by item_id asc limit 1';
-  // 未修正
+    'select * from record_item_file where linked_record_id = ? order by item_id asc limit 1';
   const countQs = 'select count(*) from record_comment where linked_record_id = ?';
   const searchLastQs = 'select * from record_last_access where user_id = ? and record_id = ?';
 
