@@ -17,3 +17,6 @@
 |- provisioning/    # 競技環境構築関連(運営者向け)
 |- scoring/         # 採点関連モジュール
 ```
+
+## リモート環境
+https://env4-daisy.ftt2204.dabaas.net/
