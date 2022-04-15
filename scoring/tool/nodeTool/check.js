@@ -2,7 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 
 
-const debug = false;
+const debug = true;
 
 const mylog = (m) => {
     if (!debug) {
