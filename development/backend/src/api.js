@@ -376,6 +376,7 @@ const tomeActive = async (req, res) => {
 // GET /record-views/allActive
 // 全件一覧
 const allActive = async (req, res) => {
+  mylog("GET ALL ACTIVE TEST LOGGERRRRRRRRRRRRR xizhu xizhu xizhu");
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
