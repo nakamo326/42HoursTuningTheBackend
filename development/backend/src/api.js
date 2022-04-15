@@ -112,7 +112,7 @@ const getItems = async (user, recordResult) => {
 // https://dev.to/bearer/measuring-performance-in-node-js-with-performance-hooks-585p
 const perfObserver = new PerformanceObserver((items) => {
   items.getEntries().forEach((entry) => {
-    // mylog(entry);
+    mylog(entry);
   });
 });
 
