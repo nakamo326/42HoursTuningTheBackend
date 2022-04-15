@@ -30,6 +30,7 @@ const mylog = (obj) => {
 };
 
 const getItems = async (user, recordResult) => {
+  performance.mark('getItems-start');
   console.log(recordResult.length);
   const items = Array(recordResult.length);
 
@@ -105,6 +106,8 @@ const getItems = async (user, recordResult) => {
       items[i] = resObj;
     })
   );
+  performance.mark('getItems-end');
+  performance.measure('getItems', 'getItems-start', 'getItems-end');
   return items;
 };
 
