@@ -9,10 +9,15 @@ build:
 scoring:
 	cd scoring && bash evaluate.sh
 
-# apiテストを行う。
-.PHONY: test
-test:
-	cd development && bash apiTestOnly.sh
+# local apiテストを行う。
+.PHONY: lapi
+lapi:
+	docker-compose -f ./local/docker-compose-local.yaml down --rmi all
+	cd local; bash cpMysqlFile.sh
+	docker-compose -f ./local/docker-compose-local.yaml build --no-cache
+	docker-compose -f ./local/docker-compose-local.yaml up -d
+	sleep 10
+	cd local; bash localApiTestOnly.sh
 
 # データリストア、dbマイグレーションも行う
 .PHONY: restore
