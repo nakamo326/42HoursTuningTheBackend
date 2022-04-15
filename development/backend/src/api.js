@@ -233,12 +233,12 @@ const tomeActive = async (req, res) => {
     limit = 10;
   }
 
-  const searchMyGroupQs = `select * from group_member where user_id = ?`;
+  const searchMyGroupQs = `SELECT group_id FROM group_member WHERE user_id = ?`;
   const [myGroupResult] = await pool.query(searchMyGroupQs, [user.user_id]);
   mylog(myGroupResult);
 
   const targetCategoryAppGroupList = [];
-  const searchTargetQs = `select * from category_group where group_id = ?`;
+  const searchTargetQs = `SELECT category_id,application_group FROM category_group WHERE group_id = ?`;
 
   for (let i = 0; i < myGroupResult.length; i++) {
     const groupId = myGroupResult[i].group_id;
@@ -286,12 +286,18 @@ const tomeActive = async (req, res) => {
   const items = Array(recordResult.length);
   let count = 0;
 
-  const searchUserQs = 'select * from user where user_id = ?';
-  const searchGroupQs = 'select * from group_info where group_id = ?';
+  const searchUserQs = 'SELECT name FROM user WHERE user_id = ?';
+
+  const searchGroupQs = 'SELECT name FROM group_info WHERE group_id = ?';
+
   const searchThumbQs =
-    'select * from record_item_file where linked_record_id = ? order by item_id asc limit 1';
-  const countQs = 'select count(*) from record_comment where linked_record_id = ?';
-  const searchLastQs = 'select * from record_last_access where user_id = ? and record_id = ?';
+    'SELECT item_id FROM record_item_file WHERE linked_record_id = ? ORDER BY item_id ASC LIMIT 1';
+
+  // 改善の余地ありかも...
+  // SELECT COUNT(*) FROM record_comment WHERE linked_record_id = 1;  ==> 1.60 sec
+  const countQs = 'SELECT COUNT(*) FROM record_comment WHERE linked_record_id = ?';
+
+  const searchLastQs = 'SELECT access_time FROM record_last_access WHERE user_id = ? and record_id = ?';
 
   for (let i = 0; i < recordResult.length; i++) {
     const resObj = {
