@@ -37,6 +37,7 @@ app.get('/api/client/record-views/tomeActive', async (req, res, next) => {
   }
 })
 
+// allActive?offset=0&limit=10
 app.get('/api/client/record-views/allActive', async (req, res, next) => {
   try {
     await api.allActive(req, res);
