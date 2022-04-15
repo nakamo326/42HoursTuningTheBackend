@@ -20,3 +20,6 @@
 
 ## リモート環境
 https://env4-daisy.ftt2204.dabaas.net/
+
+## TODO
+- [ ] Loggerを埋めこむ
