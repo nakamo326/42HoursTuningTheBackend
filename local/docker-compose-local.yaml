@@ -13,6 +13,9 @@ services:
       build:
         context: ../development/backend
         dockerfile: Dockerfile
+      command: npm run dev
+      volumes:
+        - ../development/backend/src:/backend/src
     frontend:
       build:
         context: ./dummyFrontend #dummyFrontendはダミーのhtmlのみ返却します。
