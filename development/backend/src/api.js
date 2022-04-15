@@ -341,7 +341,7 @@ const tomeActive = async (req, res) => {
   }
 
   let searchRecordQs =
-    'select * from record where status = "open" and (category_id, application_group) in (';
+    'select record_id, title, created_by, created_at, application_group, updated_at from record where status = "open" and (category_id, application_group) in (';
   let recordCountQs =
     'select count(*) from record where status = "open" and (category_id, application_group) in (';
   const param = [];
@@ -396,9 +396,7 @@ const allActive = async (req, res) => {
     limit = 10;
   }
 
-  // record内のステータスがopenのエントリの'全てのカラム'を更新日昇順、申請日？降順で並び替え、offset ~ limitまで
-  // select record_id, created_by, application_group, updated_at from record where status = "open" order by updated_at desc, record_id asc limit ? offset ?;
-  const searchRecordQs = `select * from record where status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
+  const searchRecordQs = `select record_id, title, created_by, created_at, application_group, updated_at from record where status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
 
   const [recordResult] = await pool.query(searchRecordQs, [limit, offset]);
   mylog(recordResult);
@@ -435,7 +433,7 @@ const allClosed = async (req, res) => {
     limit = 10;
   }
 
-  const searchRecordQs = `select * from record where status = "closed" order by updated_at desc, record_id asc limit ? offset ?`;
+  const searchRecordQs = `select record_id, title, created_by, created_at, application_group, updated_at from record where status = "closed" order by updated_at desc, record_id asc limit ? offset ?`;
 
   const [recordResult] = await pool.query(searchRecordQs, [limit, offset]);
   mylog(recordResult);
@@ -471,7 +469,7 @@ const mineActive = async (req, res) => {
     limit = 10;
   }
 
-  const searchRecordQs = `select * from record where created_by = ? and status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
+  const searchRecordQs = `select record_id, title, created_by, created_at, application_group, updated_at from record where created_by = ? and status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
 
   const [recordResult] = await pool.query(searchRecordQs, [
     user.user_id,
