@@ -31,7 +31,6 @@ const mylog = (obj) => {
 
 const getItems = async (user, recordResult) => {
   performance.mark('getItems-start');
-  console.log(recordResult.length);
   const items = Array(recordResult.length);
 
   const searchUserQs = 'select name from user where user_id = ?';
@@ -125,13 +124,11 @@ const getLinkedUser = async (headers) => {
   performance.mark('getlinkeduser-start');
 
   const target = headers['x-app-key'];
-  // mylog(target);
   const qs = `select * from session where value = ?`;
 
   const [rows] = await pool.query(qs, [`${target}`]);
 
   if (rows.length !== 1) {
-    // mylog('セッションが見つかりませんでした。');
     return undefined;
   }
 
@@ -434,13 +431,11 @@ const allActive = async (req, res) => {
   const recordCountQs = 'select count(*) from record where status = "open"';
   const s = pool.query(recordCountQs);
 
-  // mylog(recordResult);
-  let count = 0;
-
   const [recordResult] = await r;
   const i = getItems(user, recordResult);
 
   const [recordCountResult] = await s;
+  let count = 0;
   if (recordCountResult.length === 1) {
     count = recordCountResult[0]['count(*)'];
   }
