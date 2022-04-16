@@ -31,5 +31,5 @@ services:
         MYSQL_DATABASE: "app"
         MYSQL_USER: "backend"
         MYSQL_PASSWORD : "backend"
-      volumes:
-        - ../log/mysql_local:/tmp
+      # volumes:
+        # - ../log/mysql_local:/tmp
