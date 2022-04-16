@@ -3,8 +3,8 @@
 -- record
 
 ALTER TABLE `record` ADD INDEX idx1(`category_id`, `application_group`);
-ALTER TABLE `record` ADD INDEX idx2(`updated_at` desc, `record_id` asc);
-
+ALTER TABLE `record` ADD INDEX idx2(`status`, `updated_at` desc, `record_id` asc);
+ALTER TABLE `record` ADD INDEX idx3(`created_by`, `status`, `updated_at` desc, `record_id` asc);
 -- ALTER TABLE `record` ADD INDEX idx2(`status`, `updated_at` desc, `record_id` asc);
 -- ALTER TABLE `record` ADD INDEX idx3(`created_by`, `status`, `updated_at` desc, `record_id` asc);
 
