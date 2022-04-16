@@ -567,7 +567,6 @@ const getComments = async (req, res) => {
   const commentQs = `select * from record_comment where linked_record_id = ? order by created_at desc`;
 
   const [commentResult] = await pool.query(commentQs, [`${recordId}`]);
-  // mylog(commentResult);
 
   const commentList = Array(commentResult.length);
 
@@ -608,10 +607,6 @@ const getComments = async (req, res) => {
     commentInfo.createdAt = line.created_at;
 
     commentList[i] = commentInfo;
-  }
-
-  for (const row of commentList) {
-    // mylog(row);
   }
 
   res.send({ items: commentList });
