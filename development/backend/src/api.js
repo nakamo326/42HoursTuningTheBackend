@@ -15,7 +15,7 @@ const mysqlOption = {
   password: 'backend',
   database: 'app',
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 1000,
 };
 const pool = mysql.createPool(mysqlOption);
 
@@ -29,6 +29,87 @@ const mylog = (obj) => {
   console.log(obj);
 };
 
+const getItems = async (user, recordResult) => {
+  performance.mark('getItems-start');
+  const items = Array(recordResult.length);
+
+  const searchUserQs = 'select name from user where user_id = ?';
+  const searchGroupQs = 'select name from group_info where group_id = ?';
+  const searchThumbQs =
+    'select item_id from record_item_file where linked_record_id = ? order by item_id asc limit 1';
+  const countQs =
+    'select count(*) from record_comment where linked_record_id = ?';
+  const searchLastQs =
+    'select * from record_last_access where user_id = ? and record_id = ?';
+
+  await Promise.all(
+    recordResult.map(async (record, i) => {
+      const resObj = {
+        recordId: null,
+        title: '',
+        applicationGroup: null,
+        applicationGroupName: null,
+        createdBy: null,
+        createdByName: null,
+        createAt: '',
+        commentCount: 0,
+        isUnConfirmed: true,
+        thumbNailItemId: null,
+        updatedAt: '',
+      };
+
+      const line = record;
+      // recordResultで必要なカラムはこれだけ？
+      resObj.recordId = line.record_id;
+      resObj.title = line.title;
+      resObj.createdBy = line.created_by;
+      resObj.createAt = line.created_at;
+      resObj.applicationGroup = line.application_group;
+      resObj.updatedAt = line.updated_at;
+      //
+
+      const [userResult] = await pool.query(searchUserQs, [resObj.createdBy]);
+      if (userResult.length === 1) {
+        resObj.createdByName = userResult[0].name;
+      }
+
+      const [groupResult] = await pool.query(searchGroupQs, [
+        resObj.applicationGroup,
+      ]);
+      if (groupResult.length === 1) {
+        resObj.applicationGroupName = groupResult[0].name;
+      }
+
+      const [itemResult] = await pool.query(searchThumbQs, [resObj.recordId]);
+      if (itemResult.length === 1) {
+        resObj.thumbNailItemId = itemResult[0].item_id;
+      }
+
+      const [countResult] = await pool.query(countQs, [resObj.recordId]);
+      if (countResult.length === 1) {
+        resObj.commentCount = countResult[0]['count(*)'];
+      }
+
+      const [lastResult] = await pool.query(searchLastQs, [
+        user.user_id,
+        resObj.recordId,
+      ]);
+      if (lastResult.length === 1) {
+        const updatedAtNum = Date.parse(resObj.updatedAt);
+        const accessTimeNum = Date.parse(lastResult[0].access_time);
+        if (updatedAtNum <= accessTimeNum) {
+          resObj.isUnConfirmed = false;
+        }
+      }
+
+      items[i] = resObj;
+    })
+  );
+  performance.mark('getItems-end');
+  performance.measure('getItems', 'getItems-start', 'getItems-end');
+  return items;
+};
+
 // パフォーマンス測定関数
 // https://dev.to/bearer/measuring-performance-in-node-js-with-performance-hooks-585p
 const perfObserver = new PerformanceObserver((items) => {
@@ -37,24 +118,26 @@ const perfObserver = new PerformanceObserver((items) => {
   });
 });
 
-perfObserver.observe({ entryTypes: ["measure"], buffer: true });
+perfObserver.observe({ entryTypes: ['measure'], buffer: true });
 
 const getLinkedUser = async (headers) => {
-  performance.mark('getlinkeduser-start')
+  performance.mark('getlinkeduser-start');
 
   const target = headers['x-app-key'];
-  mylog(target);
   const qs = `select * from session where value = ?`;
 
   const [rows] = await pool.query(qs, [`${target}`]);
 
   if (rows.length !== 1) {
-    mylog('セッションが見つかりませんでした。');
     return undefined;
   }
 
   performance.mark('getlinkeduser-end');
-  performance.measure('getLinkedUser', 'getlinkeduser-start', 'getlinkeduser-end');
+  performance.measure(
+    'getLinkedUser',
+    'getlinkeduser-start',
+    'getlinkeduser-end'
+  );
   return { user_id: rows[0].linked_user_id };
 };
 
@@ -71,26 +154,26 @@ const postRecords = async (req, res) => {
     return;
   }
 
-  mylog(user);
+  // mylog(user);
 
   const body = req.body;
-  mylog(body);
+  // mylog(body);
 
   let [rows] = await pool.query(
     `select * from group_member where user_id = ?
     AND is_primary = true`,
-    [user.user_id],
+    [user.user_id]
   );
 
   if (rows.length !== 1) {
-    mylog('申請者のプライマリ組織の解決に失敗しました。');
+    // mylog('申請者のプライマリ組織の解決に失敗しました。');
     res.status(400).send();
     return;
   }
 
   const userPrimary = rows[0];
 
-  mylog(userPrimary);
+  // mylog(userPrimary);
 
   const newId = uuidv4();
 
@@ -105,7 +188,7 @@ const postRecords = async (req, res) => {
       body.categoryId,
       userPrimary.group_id,
       user.user_id,
-    ],
+    ]
   );
 
   for (const e of body.fileIdList) {
@@ -113,7 +196,7 @@ const postRecords = async (req, res) => {
       `insert into record_item_file
         (linked_record_id, linked_file_id, linked_thumbnail_file_id, created_at)
         values (?, ?, ?, now())`,
-      [`${newId}`, `${e.fileId}`, `${e.thumbFileId}`],
+      [`${newId}`, `${e.fileId}`, `${e.thumbFileId}`]
     );
   }
 
@@ -138,7 +221,7 @@ const getRecord = async (req, res) => {
   const recordQs = `select * from record where record_id = ?`;
 
   const [recordResult] = await pool.query(recordQs, [`${recordId}`]);
-  mylog(recordResult);
+  // mylog(recordResult);
 
   if (recordResult.length !== 1) {
     res.status(404).send({});
@@ -168,7 +251,9 @@ const getRecord = async (req, res) => {
 
   const line = recordResult[0];
 
-  const [primaryResult] = await pool.query(searchPrimaryGroupQs, [line.created_by]);
+  const [primaryResult] = await pool.query(searchPrimaryGroupQs, [
+    line.created_by,
+  ]);
   if (primaryResult.length === 1) {
     const primaryGroupId = primaryResult[0].group_id;
 
@@ -178,7 +263,9 @@ const getRecord = async (req, res) => {
     }
   }
 
-  const [appGroupResult] = await pool.query(searchGroupQs, [line.application_group]);
+  const [appGroupResult] = await pool.query(searchGroupQs, [
+    line.application_group,
+  ]);
   if (appGroupResult.length === 1) {
     recordInfo.applicationGroupName = appGroupResult[0].name;
   }
@@ -188,7 +275,9 @@ const getRecord = async (req, res) => {
     recordInfo.createdByName = userResult[0].name;
   }
 
-  const [categoryResult] = await pool.query(searchCategoryQs, [line.category_id]);
+  const [categoryResult] = await pool.query(searchCategoryQs, [
+    line.category_id,
+  ]);
   if (categoryResult.length === 1) {
     recordInfo.categoryName = categoryResult[0].name;
   }
@@ -204,8 +293,8 @@ const getRecord = async (req, res) => {
 
   const searchItemQs = `select * from record_item_file where linked_record_id = ? order by item_id asc`;
   const [itemResult] = await pool.query(searchItemQs, [line.record_id]);
-  mylog('itemResult');
-  mylog(itemResult);
+  // mylog('itemResult');
+  // mylog(itemResult);
 
   const searchFileQs = `select * from file where file_id = ?`;
   for (let i = 0; i < itemResult.length; i++) {
@@ -227,7 +316,7 @@ const getRecord = async (req, res) => {
 	VALUES
 	(?, ?, now())
 	ON DUPLICATE KEY UPDATE access_time = now()`,
-    [`${recordId}`, `${user.user_id}`],
+    [`${recordId}`, `${user.user_id}`]
   );
 
   res.send(recordInfo);
@@ -256,19 +345,19 @@ const tomeActive = async (req, res) => {
 
   const searchMyGroupQs = `select * from group_member where user_id = ?`;
   const [myGroupResult] = await pool.query(searchMyGroupQs, [user.user_id]);
-  mylog(myGroupResult);
+  // mylog(myGroupResult);
 
   const targetCategoryAppGroupList = [];
   const searchTargetQs = `select * from category_group where group_id = ?`;
 
   for (let i = 0; i < myGroupResult.length; i++) {
     const groupId = myGroupResult[i].group_id;
-    mylog(groupId);
+    // mylog(groupId);
 
     const [targetResult] = await pool.query(searchTargetQs, [groupId]);
     for (let j = 0; j < targetResult.length; j++) {
       const targetLine = targetResult[j];
-      mylog(targetLine);
+      // mylog(targetLine);
 
       targetCategoryAppGroupList.push({
         categoryId: targetLine.category_id,
@@ -278,7 +367,7 @@ const tomeActive = async (req, res) => {
   }
 
   let searchRecordQs =
-    'select * from record where status = "open" and (category_id, application_group) in (';
+    'select record_id, title, created_by, created_at, application_group, updated_at from record where status = "open" and (category_id, application_group) in (';
   let recordCountQs =
     'select count(*) from record where status = "open" and (category_id, application_group) in (';
   const param = [];
@@ -298,93 +387,14 @@ const tomeActive = async (req, res) => {
   recordCountQs += ' )';
   param.push(limit);
   param.push(offset);
-  mylog(searchRecordQs);
-  mylog(param);
+  // mylog(searchRecordQs);
+  // mylog(param);
 
   const [recordResult] = await pool.query(searchRecordQs, param);
-  mylog(recordResult);
+  // mylog(recordResult);
 
-  const items = Array(recordResult.length);
+  const items = await getItems(user, recordResult);
   let count = 0;
-
-  const searchUserQs = 'select * from user where user_id = ?';
-  const searchGroupQs = 'select * from group_info where group_id = ?';
-  const searchThumbQs =
-    'select * from record_item_file where linked_record_id = ? order by item_id asc limit 1';
-  const countQs = 'select count(*) from record_comment where linked_record_id = ?';
-  const searchLastQs = 'select * from record_last_access where user_id = ? and record_id = ?';
-
-  for (let i = 0; i < recordResult.length; i++) {
-    const resObj = {
-      recordId: null,
-      title: '',
-      applicationGroup: null,
-      applicationGroupName: null,
-      createdBy: null,
-      createdByName: null,
-      createAt: '',
-      commentCount: 0,
-      isUnConfirmed: true,
-      thumbNailItemId: null,
-      updatedAt: '',
-    };
-
-    const line = recordResult[i];
-    mylog(line);
-    const recordId = recordResult[i].record_id;
-    const createdBy = line.created_by;
-    const applicationGroup = line.application_group;
-    const updatedAt = line.updated_at;
-    let createdByName = null;
-    let applicationGroupName = null;
-    let thumbNailItemId = null;
-    let commentCount = 0;
-    let isUnConfirmed = true;
-
-    const [userResult] = await pool.query(searchUserQs, [createdBy]);
-    if (userResult.length === 1) {
-      createdByName = userResult[0].name;
-    }
-
-    const [groupResult] = await pool.query(searchGroupQs, [applicationGroup]);
-    if (groupResult.length === 1) {
-      applicationGroupName = groupResult[0].name;
-    }
-
-    const [itemResult] = await pool.query(searchThumbQs, [recordId]);
-    if (itemResult.length === 1) {
-      thumbNailItemId = itemResult[0].item_id;
-    }
-
-    const [countResult] = await pool.query(countQs, [recordId]);
-    if (countResult.length === 1) {
-      commentCount = countResult[0]['count(*)'];
-    }
-
-    const [lastResult] = await pool.query(searchLastQs, [user.user_id, recordId]);
-    if (lastResult.length === 1) {
-      mylog(updatedAt);
-      const updatedAtNum = Date.parse(updatedAt);
-      const accessTimeNum = Date.parse(lastResult[0].access_time);
-      if (updatedAtNum <= accessTimeNum) {
-        isUnConfirmed = false;
-      }
-    }
-
-    resObj.recordId = recordId;
-    resObj.title = line.title;
-    resObj.applicationGroup = applicationGroup;
-    resObj.applicationGroupName = applicationGroupName;
-    resObj.createdBy = createdBy;
-    resObj.createdByName = createdByName;
-    resObj.createAt = line.created_at;
-    resObj.commentCount = commentCount;
-    resObj.isUnConfirmed = isUnConfirmed;
-    resObj.thumbNailItemId = thumbNailItemId;
-    resObj.updatedAt = updatedAt;
-
-    items[i] = resObj;
-  }
 
   const [recordCountResult] = await pool.query(recordCountQs, param);
   if (recordCountResult.length === 1) {
@@ -400,6 +410,7 @@ const tomeActive = async (req, res) => {
 // 全件一覧
 const allActive = async (req, res) => {
   performance.mark('allactive-start');
+
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
@@ -414,186 +425,22 @@ const allActive = async (req, res) => {
     offset = 0;
     limit = 10;
   }
-
-  // record内のステータスがopenのエントリの'全てのカラム'を更新日昇順、申請日？降順で並び替え、offset ~ limitまで
-  // select record_id, created_by, application_group, updated_at from record where status = "open" order by updated_at desc, record_id asc limit ? offset ?;
-  const searchRecordQs = `select * from record where status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
-
-  const [recordResult] = await pool.query(searchRecordQs, [limit, offset]);
-  mylog(recordResult);
-
-  const items = Array(recordResult.length);
-  let count = 0;
-
-  // 'select name from user where user_id = ?';
-  const searchUserQs = 'select * from user where user_id = ?';
-  // 'select name from group_info where group_id = ?';
-  const searchGroupQs = 'select * from group_info where group_id = ?';
-  // 'select item_id from record_item_file where linked_record_id = ? order by item_id asc limit 1';
-  const searchThumbQs =
-    'select * from record_item_file where linked_record_id = ? order by item_id asc limit 1';
-  const countQs = 'select count(*) from record_comment where linked_record_id = ?';
-  const searchLastQs = 'select * from record_last_access where user_id = ? and record_id = ?';
-
-  await Promise.all(
-    recordResult.map(async (record, i) => {
-      const resObj = {
-        recordId: null,
-        title: '',
-        applicationGroup: null,
-        applicationGroupName: null,
-        createdBy: null,
-        createdByName: null,
-        createAt: '',
-        commentCount: 0,
-        isUnConfirmed: true,
-        thumbNailItemId: null,
-        updatedAt: '',
-      };
-  
-      const line = record;
-      mylog(line);
-      // recordResultで必要なカラムはこれだけ？
-      const recordId = line.record_id;
-      const createdBy = line.created_by;
-      const applicationGroup = line.application_group;
-      const updatedAt = line.updated_at;
-      //
-      let createdByName = null;
-      let applicationGroupName = null;
-      let thumbNailItemId = null;
-      let commentCount = 0;
-      let isUnConfirmed = true;
-  
-      const [userResult] = await pool.query(searchUserQs, [createdBy]);
-      if (userResult.length === 1) {
-        createdByName = userResult[0].name;
-      }
-  
-      const [groupResult] = await pool.query(searchGroupQs, [applicationGroup]);
-      if (groupResult.length === 1) {
-        applicationGroupName = groupResult[0].name;
-      }
-  
-      const [itemResult] = await pool.query(searchThumbQs, [recordId]);
-      if (itemResult.length === 1) {
-        thumbNailItemId = itemResult[0].item_id;
-      }
-  
-      const [countResult] = await pool.query(countQs, [recordId]);
-      if (countResult.length === 1) {
-        commentCount = countResult[0]['count(*)'];
-      }
-  
-      const [lastResult] = await pool.query(searchLastQs, [user.user_id, recordId]);
-      if (lastResult.length === 1) {
-        mylog(updatedAt);
-        const updatedAtNum = Date.parse(updatedAt);
-        const accessTimeNum = Date.parse(lastResult[0].access_time);
-        if (updatedAtNum <= accessTimeNum) {
-          isUnConfirmed = false;
-        }
-      }
-  
-      resObj.recordId = recordId;
-      resObj.title = line.title;
-      resObj.applicationGroup = applicationGroup;
-      resObj.applicationGroupName = applicationGroupName;
-      resObj.createdBy = createdBy;
-      resObj.createdByName = createdByName;
-      resObj.createAt = line.created_at;
-      resObj.commentCount = commentCount;
-      resObj.isUnConfirmed = isUnConfirmed;
-      resObj.thumbNailItemId = thumbNailItemId;
-      resObj.updatedAt = updatedAt;
-  
-      items[i] = resObj;
-    }),
-  );
-
-  /*
-  for (let i = 0; i < recordResult.length; i++) {
-    const resObj = {
-      recordId: null,
-      title: '',
-      applicationGroup: null,
-      applicationGroupName: null,
-      createdBy: null,
-      createdByName: null,
-      createAt: '',
-      commentCount: 0,
-      isUnConfirmed: true,
-      thumbNailItemId: null,
-      updatedAt: '',
-    };
-
-    const line = recordResult[i];
-    mylog(line);
-    // recordResultで必要なカラムはこれだけ？
-    const recordId = recordResult[i].record_id;
-    const createdBy = line.created_by;
-    const applicationGroup = line.application_group;
-    const updatedAt = line.updated_at;
-    //
-    let createdByName = null;
-    let applicationGroupName = null;
-    let thumbNailItemId = null;
-    let commentCount = 0;
-    let isUnConfirmed = true;
-
-    const [userResult] = await pool.query(searchUserQs, [createdBy]);
-    if (userResult.length === 1) {
-      createdByName = userResult[0].name;
-    }
-
-    const [groupResult] = await pool.query(searchGroupQs, [applicationGroup]);
-    if (groupResult.length === 1) {
-      applicationGroupName = groupResult[0].name;
-    }
-
-    const [itemResult] = await pool.query(searchThumbQs, [recordId]);
-    if (itemResult.length === 1) {
-      thumbNailItemId = itemResult[0].item_id;
-    }
-
-    const [countResult] = await pool.query(countQs, [recordId]);
-    if (countResult.length === 1) {
-      commentCount = countResult[0]['count(*)'];
-    }
-
-    const [lastResult] = await pool.query(searchLastQs, [user.user_id, recordId]);
-    if (lastResult.length === 1) {
-      mylog(updatedAt);
-      const updatedAtNum = Date.parse(updatedAt);
-      const accessTimeNum = Date.parse(lastResult[0].access_time);
-      if (updatedAtNum <= accessTimeNum) {
-        isUnConfirmed = false;
-      }
-    }
-
-    resObj.recordId = recordId;
-    resObj.title = line.title;
-    resObj.applicationGroup = applicationGroup;
-    resObj.applicationGroupName = applicationGroupName;
-    resObj.createdBy = createdBy;
-    resObj.createdByName = createdByName;
-    resObj.createAt = line.created_at;
-    resObj.commentCount = commentCount;
-    resObj.isUnConfirmed = isUnConfirmed;
-    resObj.thumbNailItemId = thumbNailItemId;
-    resObj.updatedAt = updatedAt;
-
-    items[i] = resObj;
-  }
-  */
-
+  // TODO: 先に実行
+  const searchRecordQs = `select record_id, title, created_by, created_at, application_group, updated_at from record where status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
+  const r = pool.query(searchRecordQs, [limit, offset]);
   const recordCountQs = 'select count(*) from record where status = "open"';
+  const s = pool.query(recordCountQs);
 
-  const [recordCountResult] = await pool.query(recordCountQs);
+  const [recordResult] = await r;
+  const i = getItems(user, recordResult);
+
+  const [recordCountResult] = await s;
+  let count = 0;
   if (recordCountResult.length === 1) {
     count = recordCountResult[0]['count(*)'];
   }
 
+  const items = await i;
   res.send({ count: count, items: items });
   performance.mark('allactive-end');
   performance.measure('allActive', 'allactive-start', 'allactive-end');
@@ -618,92 +465,13 @@ const allClosed = async (req, res) => {
     limit = 10;
   }
 
-  const searchRecordQs = `select * from record where status = "closed" order by updated_at desc, record_id asc limit ? offset ?`;
+  const searchRecordQs = `select record_id, title, created_by, created_at, application_group, updated_at from record where status = "closed" order by updated_at desc, record_id asc limit ? offset ?`;
 
   const [recordResult] = await pool.query(searchRecordQs, [limit, offset]);
-  mylog(recordResult);
+  // mylog(recordResult);
 
-  const items = Array(recordResult.length);
+  const items = await getItems(user, recordResult);
   let count = 0;
-
-  const searchUserQs = 'select * from user where user_id = ?';
-  const searchGroupQs = 'select * from group_info where group_id = ?';
-  const searchThumbQs =
-    'select * from record_item_file where linked_record_id = ? order by item_id asc limit 1';
-  const countQs = 'select count(*) from record_comment where linked_record_id = ?';
-  const searchLastQs = 'select * from record_last_access where user_id = ? and record_id = ?';
-
-  for (let i = 0; i < recordResult.length; i++) {
-    const resObj = {
-      recordId: null,
-      title: '',
-      applicationGroup: null,
-      applicationGroupName: null,
-      createdBy: null,
-      createdByName: null,
-      createAt: '',
-      commentCount: 0,
-      isUnConfirmed: true,
-      thumbNailItemId: null,
-      updatedAt: '',
-    };
-
-    const line = recordResult[i];
-    mylog(line);
-    const recordId = recordResult[i].record_id;
-    const createdBy = line.created_by;
-    const applicationGroup = line.application_group;
-    const updatedAt = line.updated_at;
-    let createdByName = null;
-    let applicationGroupName = null;
-    let thumbNailItemId = null;
-    let commentCount = 0;
-    let isUnConfirmed = true;
-
-    const [userResult] = await pool.query(searchUserQs, [createdBy]);
-    if (userResult.length === 1) {
-      createdByName = userResult[0].name;
-    }
-
-    const [groupResult] = await pool.query(searchGroupQs, [applicationGroup]);
-    if (groupResult.length === 1) {
-      applicationGroupName = groupResult[0].name;
-    }
-
-    const [itemResult] = await pool.query(searchThumbQs, [recordId]);
-    if (itemResult.length === 1) {
-      thumbNailItemId = itemResult[0].item_id;
-    }
-
-    const [countResult] = await pool.query(countQs, [recordId]);
-    if (countResult.length === 1) {
-      commentCount = countResult[0]['count(*)'];
-    }
-
-    const [lastResult] = await pool.query(searchLastQs, [user.user_id, recordId]);
-    if (lastResult.length === 1) {
-      mylog(updatedAt);
-      const updatedAtNum = Date.parse(updatedAt);
-      const accessTimeNum = Date.parse(lastResult[0].access_time);
-      if (updatedAtNum <= accessTimeNum) {
-        isUnConfirmed = false;
-      }
-    }
-
-    resObj.recordId = recordId;
-    resObj.title = line.title;
-    resObj.applicationGroup = applicationGroup;
-    resObj.applicationGroupName = applicationGroupName;
-    resObj.createdBy = createdBy;
-    resObj.createdByName = createdByName;
-    resObj.createAt = line.created_at;
-    resObj.commentCount = commentCount;
-    resObj.isUnConfirmed = isUnConfirmed;
-    resObj.thumbNailItemId = thumbNailItemId;
-    resObj.updatedAt = updatedAt;
-
-    items[i] = resObj;
-  }
 
   const recordCountQs = 'select count(*) from record where status = "closed"';
 
@@ -736,94 +504,20 @@ const mineActive = async (req, res) => {
     limit = 10;
   }
 
-  const searchRecordQs = `select * from record where created_by = ? and status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
+  const searchRecordQs = `select record_id, title, created_by, created_at, application_group, updated_at from record where created_by = ? and status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
 
-  const [recordResult] = await pool.query(searchRecordQs, [user.user_id, limit, offset]);
-  mylog(recordResult);
+  const [recordResult] = await pool.query(searchRecordQs, [
+    user.user_id,
+    limit,
+    offset,
+  ]);
+  // mylog(recordResult);
 
-  const items = Array(recordResult.length);
+  const items = await getItems(user, recordResult);
   let count = 0;
 
-  const searchUserQs = 'select * from user where user_id = ?';
-  const searchGroupQs = 'select * from group_info where group_id = ?';
-  const searchThumbQs =
-    'select * from record_item_file where linked_record_id = ? order by item_id asc limit 1';
-  const countQs = 'select count(*) from record_comment where linked_record_id = ?';
-  const searchLastQs = 'select * from record_last_access where user_id = ? and record_id = ?';
-
-  for (let i = 0; i < recordResult.length; i++) {
-    const resObj = {
-      recordId: null,
-      title: '',
-      applicationGroup: null,
-      applicationGroupName: null,
-      createdBy: null,
-      createdByName: null,
-      createAt: '',
-      commentCount: 0,
-      isUnConfirmed: true,
-      thumbNailItemId: null,
-      updatedAt: '',
-    };
-
-    const line = recordResult[i];
-    mylog(line);
-    const recordId = recordResult[i].record_id;
-    const createdBy = line.created_by;
-    const applicationGroup = line.application_group;
-    const updatedAt = line.updated_at;
-    let createdByName = null;
-    let applicationGroupName = null;
-    let thumbNailItemId = null;
-    let commentCount = 0;
-    let isUnConfirmed = true;
-
-    const [userResult] = await pool.query(searchUserQs, [createdBy]);
-    if (userResult.length === 1) {
-      createdByName = userResult[0].name;
-    }
-
-    const [groupResult] = await pool.query(searchGroupQs, [applicationGroup]);
-    if (groupResult.length === 1) {
-      applicationGroupName = groupResult[0].name;
-    }
-
-    const [itemResult] = await pool.query(searchThumbQs, [recordId]);
-    if (itemResult.length === 1) {
-      thumbNailItemId = itemResult[0].item_id;
-    }
-
-    const [countResult] = await pool.query(countQs, [recordId]);
-    if (countResult.length === 1) {
-      commentCount = countResult[0]['count(*)'];
-    }
-
-    const [lastResult] = await pool.query(searchLastQs, [user.user_id, recordId]);
-    if (lastResult.length === 1) {
-      mylog(updatedAt);
-      const updatedAtNum = Date.parse(updatedAt);
-      const accessTimeNum = Date.parse(lastResult[0].access_time);
-      if (updatedAtNum <= accessTimeNum) {
-        isUnConfirmed = false;
-      }
-    }
-
-    resObj.recordId = recordId;
-    resObj.title = line.title;
-    resObj.applicationGroup = applicationGroup;
-    resObj.applicationGroupName = applicationGroupName;
-    resObj.createdBy = createdBy;
-    resObj.createdByName = createdByName;
-    resObj.createAt = line.created_at;
-    resObj.commentCount = commentCount;
-    resObj.isUnConfirmed = isUnConfirmed;
-    resObj.thumbNailItemId = thumbNailItemId;
-    resObj.updatedAt = updatedAt;
-
-    items[i] = resObj;
-  }
-
-  const recordCountQs = 'select count(*) from record where created_by = ? and status = "open"';
+  const recordCountQs =
+    'select count(*) from record where created_by = ? and status = "open"';
 
   const [recordCountResult] = await pool.query(recordCountQs, [user.user_id]);
   if (recordCountResult.length === 1) {
@@ -875,7 +569,7 @@ const getComments = async (req, res) => {
   const commentQs = `select * from record_comment where linked_record_id = ? order by created_at desc`;
 
   const [commentResult] = await pool.query(commentQs, [`${recordId}`]);
-  mylog(commentResult);
+  // mylog(commentResult);
 
   const commentList = Array(commentResult.length);
 
@@ -893,7 +587,9 @@ const getComments = async (req, res) => {
     };
     const line = commentResult[i];
 
-    const [primaryResult] = await pool.query(searchPrimaryGroupQs, [line.created_by]);
+    const [primaryResult] = await pool.query(searchPrimaryGroupQs, [
+      line.created_by,
+    ]);
     if (primaryResult.length === 1) {
       const primaryGroupId = primaryResult[0].group_id;
 
@@ -917,7 +613,7 @@ const getComments = async (req, res) => {
   }
 
   for (const row of commentList) {
-    mylog(row);
+    // mylog(row);
   }
 
   res.send({ items: commentList });
@@ -944,13 +640,13 @@ const postComments = async (req, res) => {
     insert into record_comment
     (linked_record_id, value, created_by, created_at)
     values (?,?,?, now());`,
-    [`${recordId}`, `${value}`, user.user_id],
+    [`${recordId}`, `${value}`, user.user_id]
   );
 
   await pool.query(
     `
     update record set updated_at = now() where record_id = ?;`,
-    [`${recordId}`],
+    [`${recordId}`]
   );
 
   res.send({});
@@ -972,7 +668,7 @@ const getCategories = async (req, res) => {
   const [rows] = await pool.query(`select * from category`);
 
   for (const row of rows) {
-    mylog(row);
+    // mylog(row);
   }
 
   const items = {};
@@ -983,7 +679,11 @@ const getCategories = async (req, res) => {
 
   res.send({ items });
   performance.mark('getcategories-end');
-  performance.measure('getCategories', 'getcategories-start', 'getcategories-end');
+  performance.measure(
+    'getCategories',
+    'getcategories-start',
+    'getcategories-end'
+  );
 };
 
 // POST files/
@@ -998,7 +698,7 @@ const postFiles = async (req, res) => {
   }
 
   const base64Data = req.body.data;
-  mylog(base64Data);
+  // mylog(base64Data);
 
   const name = req.body.name;
 
@@ -1010,10 +710,13 @@ const postFiles = async (req, res) => {
   fs.writeFileSync(`${filePath}${newId}_${name}`, binary);
 
   const image = await jimp.read(fs.readFileSync(`${filePath}${newId}_${name}`));
-  mylog(image.bitmap.width);
-  mylog(image.bitmap.height);
+  // mylog(image.bitmap.width);
+  // mylog(image.bitmap.height);
 
-  const size = image.bitmap.width < image.bitmap.height ? image.bitmap.width : image.bitmap.height;
+  const size =
+    image.bitmap.width < image.bitmap.height
+      ? image.bitmap.width
+      : image.bitmap.height;
   await image.cover(size, size);
 
   await image.writeAsync(`${filePath}${newThumbId}_thumb_${name}`);
@@ -1021,12 +724,12 @@ const postFiles = async (req, res) => {
   await pool.query(
     `insert into file (file_id, path, name)
         values (?, ?, ?)`,
-    [`${newId}`, `${filePath}${newId}_${name}`, `${name}`],
+    [`${newId}`, `${filePath}${newId}_${name}`, `${name}`]
   );
   await pool.query(
     `insert into file (file_id, path, name)
         values (?, ?, ?)`,
-    [`${newThumbId}`, `${filePath}${newThumbId}_thumb_${name}`, `thumb_${name}`],
+    [`${newThumbId}`, `${filePath}${newThumbId}_thumb_${name}`, `thumb_${name}`]
   );
 
   res.send({ fileId: newId, thumbFileId: newThumbId });
@@ -1046,9 +749,9 @@ const getRecordItemFile = async (req, res) => {
   }
 
   const recordId = req.params.recordId;
-  mylog(recordId);
+  // mylog(recordId);
   const itemId = Number(req.params.itemId);
-  mylog(itemId);
+  // mylog(itemId);
 
   const [rows] = await pool.query(
     `select f.name, f.path from record_item_file r
@@ -1059,24 +762,28 @@ const getRecordItemFile = async (req, res) => {
     r.item_id = ?
     and
     r.linked_file_id = f.file_id`,
-    [`${recordId}`, `${itemId}`],
+    [`${recordId}`, `${itemId}`]
   );
 
   if (rows.length !== 1) {
     res.status(404).send({});
     return;
   }
-  mylog(rows[0]);
+  // mylog(rows[0]);
 
   const fileInfo = rows[0];
 
   const data = fs.readFileSync(fileInfo.path);
   const base64 = data.toString('base64');
-  mylog(base64);
+  // mylog(base64);
 
   res.send({ data: base64, name: fileInfo.name });
   performance.mark('getrecorditemfile-end');
-  performance.measure('getRecordItemFile', 'getrecorditemfile-start', 'getrecorditemfile-end'); 
+  performance.measure(
+    'getRecordItemFile',
+    'getrecorditemfile-start',
+    'getrecorditemfile-end'
+  );
 };
 
 // GET records/{recordId}/files/{itemId}/thumbnail
@@ -1091,9 +798,9 @@ const getRecordItemFileThumbnail = async (req, res) => {
   }
 
   const recordId = req.params.recordId;
-  mylog(recordId);
+  // mylog(recordId);
   const itemId = Number(req.params.itemId);
-  mylog(itemId);
+  // mylog(itemId);
 
   const [rows] = await pool.query(
     `select f.name, f.path from record_item_file r
@@ -1104,24 +811,28 @@ const getRecordItemFileThumbnail = async (req, res) => {
     r.item_id = ?
     and
     r.linked_thumbnail_file_id = f.file_id`,
-    [`${recordId}`, `${itemId}`],
+    [`${recordId}`, `${itemId}`]
   );
 
   if (rows.length !== 1) {
     res.status(404).send({});
     return;
   }
-  mylog(rows[0]);
+  // mylog(rows[0]);
 
   const fileInfo = rows[0];
 
   const data = fs.readFileSync(fileInfo.path);
   const base64 = data.toString('base64');
-  mylog(base64);
+  // mylog(base64);
 
   res.send({ data: base64, name: fileInfo.name });
   performance.mark('getrecorditemfilethumbnail-end');
-  performance.measure('getRecordItemFileThumbnail', 'getrecorditemfilethumbnail-start', 'getrecorditemfilethumbnail-end'); 
+  performance.measure(
+    'getRecordItemFileThumbnail',
+    'getrecorditemfilethumbnail-start',
+    'getrecorditemfilethumbnail-end'
+  );
 };
 
 module.exports = {

@@ -1,0 +1,215 @@
+発生回数
+Reading mysql slow query log from /tmp/slow.log
+Count: 316  Time=7.43s (2347s)  Lock=0.00s (0s)  Rows=1.0 (316), backend[backend]@[192.168.48.2]
+  select * from session where value = 'S'
+
+Count: 33  Time=13.06s (431s)  Lock=0.00s (0s)  Rows=1.0 (33), backend[backend]@[192.168.48.2]
+  select * from group_member where user_id = N
+  AND is_primary = true
+
+Count: 22  Time=13.20s (290s)  Lock=0.00s (0s)  Rows=1.0 (22), backend[backend]@[192.168.48.2]
+  select * from group_member where user_id = N and is_primary = true
+
+Count: 22  Time=10.96s (241s)  Lock=0.00s (0s)  Rows=2.0 (44), backend[backend]@[192.168.48.2]
+  select * from group_member where user_id = N
+
+Count: 10  Time=2.48s (24s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  insert into record
+  (record_id, status, title, detail, category_id, application_group, created_by, created_at, updated_at)
+  values ('S', "S", 'S', 'S', 'S', N, N, now(), now())
+
+Count: 9  Time=3.18s (28s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  insert into record_comment
+  (linked_record_id, value, created_by, created_at)
+  values ('S','S',N, now())
+
+Count: 6  Time=2.26s (13s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  update record set updated_at = now() where record_id = 'S'
+
+Count: 6  Time=2.55s (15s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  insert into record_item_file
+  (linked_record_id, linked_file_id, linked_thumbnail_file_id, created_at)
+  values ('S', 'S', 'S', now())
+
+Count: 5  Time=1.88s (9s)  Lock=0.00s (0s)  Rows=1.0 (5), backend[backend]@[192.168.48.2]
+  select * from category where category_id = N
+
+Count: 5  Time=1.76s (8s)  Lock=0.00s (0s)  Rows=2.0 (10), backend[backend]@[192.168.48.2]
+  select * from category_group where group_id = N
+
+Count: 4  Time=31.36s (125s)  Lock=0.00s (0s)  Rows=1.0 (4), backend[backend]@[192.168.48.2]
+  select item_id from record_item_file where linked_record_id = 'S' order by item_id asc limit N
+
+Count: 4  Time=2.00s (7s)  Lock=0.00s (0s)  Rows=1.0 (4), backend[backend]@[192.168.48.2]
+  select * from user where user_id = N
+
+Count: 4  Time=3.25s (12s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  insert into file (file_id, path, name)
+  values ('S', 'S', 'S')
+
+Count: 3  Time=3.86s (11s)  Lock=0.00s (0s)  Rows=1.0 (3), backend[backend]@[192.168.48.2]
+  select f.name, f.path from record_item_file r
+  inner join file f
+  on
+  r.linked_record_id = 'S'
+  and
+  r.item_id = 'S'
+  and
+  r.linked_thumbnail_file_id = f.file_id
+
+Count: 2  Time=3.10s (6s)  Lock=0.00s (0s)  Rows=1.0 (2), backend[backend]@[192.168.48.2]
+  select * from record where record_id = 'S'
+
+Count: 2  Time=2.23s (4s)  Lock=0.00s (0s)  Rows=10.0 (20), backend[backend]@[192.168.48.2]
+  select * from category
+
+Count: 2  Time=2.56s (5s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  update record set status = 'S' where record_id = 'S'
+
+Count: 1  Time=2.48s (2s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  INSERT INTO record_last_access
+  (record_id, user_id, access_time)
+  VALUES
+  ('S', 'S', now())
+  ON DUPLICATE KEY UPDATE access_time = now()
+
+Count: 1  Time=156.28s (156s)  Lock=0.00s (0s)  Rows=10.0 (10), backend[backend]@[192.168.48.2]
+  select record_id, title, created_by, created_at, application_group, updated_at from record where status = "S" order by updated_at desc, record_id asc limit N offset N
+
+Count: 1  Time=3.00s (3s)  Lock=0.00s (0s)  Rows=1.0 (1), backend[backend]@[192.168.48.2]
+  select f.name, f.path from record_item_file r
+  inner join file f
+  on
+  r.linked_record_id = 'S'
+  and
+  r.item_id = 'S'
+  and
+  r.linked_file_id = f.file_id
+
+Count: 1  Time=202.20s (202s)  Lock=0.00s (0s)  Rows=1.0 (1), backend[backend]@[192.168.48.2]
+  select record_id, title, created_by, created_at, application_group, updated_at from record where created_by = N and status = "S" order by updated_at desc, record_id asc limit N offset N
+
+Count: 1  Time=2.16s (2s)  Lock=0.00s (0s)  Rows=1.0 (1), backend[backend]@[192.168.48.2]
+  select * from file where file_id = 'S'
+
+Count: 1  Time=195.34s (195s)  Lock=0.00s (0s)  Rows=2.0 (2), backend[backend]@[192.168.48.2]
+  select * from record_item_file where linked_record_id = 'S' order by item_id asc
+
+Count: 1  Time=152.66s (152s)  Lock=0.00s (0s)  Rows=1.0 (1), backend[backend]@[192.168.48.2]
+  select count(record_id) from record where status = "S"
+
+Count: 1  Time=3.61s (3s)  Lock=0.00s (0s)  Rows=1.0 (1), backend[backend]@[192.168.48.2]
+  select * from group_info where group_id = N
+
+
+処理時間
+Reading mysql slow query log from /tmp/slow.log
+Count: 42  Time=237.45s (9972s)  Lock=0.00s (0s)  Rows=10.0 (420), backend[backend]@[192.168.48.2]
+  select record_id, title, created_by, created_at, application_group, updated_at from record where status = "S" order by updated_at desc, record_id asc limit N offset N
+
+Count: 22  Time=216.31s (4758s)  Lock=0.00s (0s)  Rows=10.0 (220), backend[backend]@[192.168.48.2]
+  select record_id, title, created_by, created_at, application_group, updated_at from record where status = "S" and (category_id, application_group) in ( (N, N), (N, N), (N, N), (N, N), (N, N) ) order by updated_at desc, record_id  limit N offset N
+
+Count: 20  Time=214.38s (4287s)  Lock=0.00s (0s)  Rows=1.0 (20), backend[backend]@[192.168.48.2]
+  select record_id, title, created_by, created_at, application_group, updated_at from record where created_by = N and status = "S" order by updated_at desc, record_id asc limit N offset N
+
+Count: 23  Time=178.66s (4109s)  Lock=0.00s (0s)  Rows=1.8 (42), backend[backend]@[192.168.48.2]
+  select * from record_item_file where linked_record_id = 'S' order by item_id asc
+
+Count: 17  Time=197.97s (3365s)  Lock=0.00s (0s)  Rows=1.0 (17), backend[backend]@[192.168.48.2]
+  select count(record_id) from record where status = "S"
+
+Count: 94  Time=27.01s (2538s)  Lock=0.00s (0s)  Rows=1.0 (91), backend[backend]@[192.168.48.2]
+  select item_id from record_item_file where linked_record_id = 'S' order by item_id asc limit N
+
+Count: 316  Time=7.43s (2347s)  Lock=0.00s (0s)  Rows=1.0 (316), backend[backend]@[192.168.48.2]
+  select * from session where value = 'S'
+
+Count: 33  Time=13.06s (431s)  Lock=0.00s (0s)  Rows=1.0 (33), backend[backend]@[192.168.48.2]
+  select * from group_member where user_id = N
+  AND is_primary = true
+
+Count: 22  Time=13.20s (290s)  Lock=0.00s (0s)  Rows=1.0 (22), backend[backend]@[192.168.48.2]
+  select * from group_member where user_id = N and is_primary = true
+
+Count: 22  Time=10.96s (241s)  Lock=0.00s (0s)  Rows=2.0 (44), backend[backend]@[192.168.48.2]
+  select * from group_member where user_id = N
+
+Count: 9  Time=3.18s (28s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  insert into record_comment
+  (linked_record_id, value, created_by, created_at)
+  values ('S','S',N, now())
+
+Count: 10  Time=2.48s (24s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  insert into record
+  (record_id, status, title, detail, category_id, application_group, created_by, created_at, updated_at)
+  values ('S', "S", 'S', 'S', 'S', N, N, now(), now())
+
+Count: 6  Time=2.55s (15s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  insert into record_item_file
+  (linked_record_id, linked_file_id, linked_thumbnail_file_id, created_at)
+  values ('S', 'S', 'S', now())
+
+Count: 6  Time=2.26s (13s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  update record set updated_at = now() where record_id = 'S'
+
+Count: 7  Time=1.87s (13s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  INSERT INTO record_last_access
+  (record_id, user_id, access_time)
+  VALUES
+  ('S', 'S', now())
+  ON DUPLICATE KEY UPDATE access_time = now()
+
+Count: 4  Time=3.25s (12s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  insert into file (file_id, path, name)
+  values ('S', 'S', 'S')
+
+Count: 3  Time=3.86s (11s)  Lock=0.00s (0s)  Rows=1.0 (3), backend[backend]@[192.168.48.2]
+  select f.name, f.path from record_item_file r
+  inner join file f
+  on
+  r.linked_record_id = 'S'
+  and
+  r.item_id = 'S'
+  and
+  r.linked_thumbnail_file_id = f.file_id
+
+Count: 5  Time=1.88s (9s)  Lock=0.00s (0s)  Rows=1.0 (5), backend[backend]@[192.168.48.2]
+  select * from category where category_id = N
+
+Count: 8  Time=1.17s (9s)  Lock=0.00s (0s)  Rows=1.0 (8), backend[backend]@[192.168.48.2]
+  select name from user where user_id = N
+
+Count: 5  Time=1.78s (8s)  Lock=0.00s (0s)  Rows=1.0 (5), backend[backend]@[192.168.48.2]
+  select * from file where file_id = 'S'
+
+Count: 6  Time=1.47s (8s)  Lock=0.00s (0s)  Rows=1.0 (6), backend[backend]@[192.168.48.2]
+  select name from group_info where group_id = N
+
+Count: 5  Time=1.76s (8s)  Lock=0.00s (0s)  Rows=2.0 (10), backend[backend]@[192.168.48.2]
+  select * from category_group where group_id = N
+
+Count: 4  Time=2.00s (7s)  Lock=0.00s (0s)  Rows=1.0 (4), backend[backend]@[192.168.48.2]
+  select * from user where user_id = N
+
+Count: 2  Time=3.10s (6s)  Lock=0.00s (0s)  Rows=1.0 (2), backend[backend]@[192.168.48.2]
+  select * from record where record_id = 'S'
+
+Count: 2  Time=2.56s (5s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[192.168.48.2]
+  update record set status = 'S' where record_id = 'S'
+
+Count: 2  Time=2.23s (4s)  Lock=0.00s (0s)  Rows=10.0 (20), backend[backend]@[192.168.48.2]
+  select * from category
+
+Count: 1  Time=3.61s (3s)  Lock=0.00s (0s)  Rows=1.0 (1), backend[backend]@[192.168.48.2]
+  select * from group_info where group_id = N
+
+Count: 1  Time=3.00s (3s)  Lock=0.00s (0s)  Rows=1.0 (1), backend[backend]@[192.168.48.2]
+  select f.name, f.path from record_item_file r
+  inner join file f
+  on
+  r.linked_record_id = 'S'
+  and
+  r.item_id = 'S'
+  and
+  r.linked_file_id = f.file_id
