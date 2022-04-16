@@ -648,18 +648,6 @@ const postComments = async (req, res) => {
 };
 
 // GET categories/
-const expectCategories = {
-  1: { name: '緊急の対応が必要' },
-  2: { name: '故障・不具合(大型)' },
-  3: { name: '故障・不具合(中型・小型)' },
-  4: { name: '異常の疑い(大型)' },
-  5: { name: '異常の疑い(中型・小型)' },
-  6: { name: 'お客様からの問い合わせ' },
-  7: { name: 'オフィス外装・インフラ' },
-  8: { name: '貸与品関連' },
-  9: { name: 'オフィス備品' },
-  10: { name: 'その他' },
-};
 
 const getCategories = async (req, res) => {
   performance.mark('getcategories-start');
@@ -669,6 +657,19 @@ const getCategories = async (req, res) => {
     res.status(401).send();
     return;
   }
+
+  const expectCategories = {
+    1: { name: '緊急の対応が必要' },
+    2: { name: '故障・不具合(大型)' },
+    3: { name: '故障・不具合(中型・小型)' },
+    4: { name: '異常の疑い(大型)' },
+    5: { name: '異常の疑い(中型・小型)' },
+    6: { name: 'お客様からの問い合わせ' },
+    7: { name: 'オフィス外装・インフラ' },
+    8: { name: '貸与品関連' },
+    9: { name: 'オフィス備品' },
+    10: { name: 'その他' },
+  };
 
   res.send({ expectCategories });
   return;
