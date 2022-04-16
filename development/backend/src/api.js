@@ -38,7 +38,7 @@ const getItems = async (user, recordResult) => {
   const searchThumbQs =
     'select item_id from record_item_file where linked_record_id = ? order by item_id asc limit 1';
   const countQs =
-    'select count(comment_id) from record_comment where linked_record_id = ?';
+    'select count(*) from record_comment where linked_record_id = ?';
   const searchLastQs =
     'select * from record_last_access where user_id = ? and record_id = ?';
 
@@ -369,7 +369,7 @@ const tomeActive = async (req, res) => {
   let searchRecordQs =
     'select record_id, title, created_by, created_at, application_group, updated_at from record where status = "open" and (category_id, application_group) in (';
   let recordCountQs =
-    'select count(record_id) from record where status = "open" and (category_id, application_group) in (';
+    'select count(*) from record where status = "open" and (category_id, application_group) in (';
   const param = [];
 
   for (let i = 0; i < targetCategoryAppGroupList.length; i++) {
@@ -428,8 +428,7 @@ const allActive = async (req, res) => {
   // TODO: 先に実行
   const searchRecordQs = `select record_id, title, created_by, created_at, application_group, updated_at from record where status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
   const r = pool.query(searchRecordQs, [limit, offset]);
-  const recordCountQs =
-    'select count(record_id) from record where status = "open"';
+  const recordCountQs = 'select count(*) from record where status = "open"';
   const s = pool.query(recordCountQs);
 
   const [recordResult] = await r;
@@ -474,8 +473,7 @@ const allClosed = async (req, res) => {
   const items = await getItems(user, recordResult);
   let count = 0;
 
-  const recordCountQs =
-    'select count(record_id) from record where status = "closed"';
+  const recordCountQs = 'select count(*) from record where status = "closed"';
 
   const [recordCountResult] = await pool.query(recordCountQs);
   if (recordCountResult.length === 1) {
@@ -519,7 +517,7 @@ const mineActive = async (req, res) => {
   let count = 0;
 
   const recordCountQs =
-    'select count(record_id) from record where created_by = ? and status = "open"';
+    'select count(*) from record where created_by = ? and status = "open"';
 
   const [recordCountResult] = await pool.query(recordCountQs, [user.user_id]);
   if (recordCountResult.length === 1) {
