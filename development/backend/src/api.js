@@ -343,7 +343,9 @@ const tomeActive = async (req, res) => {
   }
 
   const searchTargetQs = `select category_id as categoryId,application_group as applicationGroup from category_group c inner join group_member g on c.group_id = g.group_id where g.user_id = ?`;
-  const [targetCategoryAppGroupList] = await pool.query(searchTargetQs, [user.user_id]);
+  const [targetCategoryAppGroupList] = await pool.query(searchTargetQs, [
+    user.user_id,
+  ]);
 
   let searchRecordQs =
     'select record_id, title, created_by, created_at, application_group, updated_at from record where status = "open" and (category_id, application_group) in (';
@@ -545,50 +547,51 @@ const getComments = async (req, res) => {
 
   const recordId = req.params.recordId;
 
-  const commentQs = `select * from record_comment where linked_record_id = ? order by created_at desc`;
+  const commentQs = `select comment_id, value, created_by, created_at from record_comment where linked_record_id = ? order by created_at desc`;
 
   const [commentResult] = await pool.query(commentQs, [`${recordId}`]);
 
   const commentList = Array(commentResult.length);
 
-  const searchPrimaryGroupQs = `select * from group_member where user_id = ? and is_primary = true`;
-  const searchUserQs = `select * from user where user_id = ?`;
-  const searchGroupQs = `select * from group_info where group_id = ?`;
-  for (let i = 0; i < commentResult.length; i++) {
-    let commentInfo = {
-      commentId: '',
-      value: '',
-      createdBy: null,
-      createdByName: null,
-      createdByPrimaryGroupName: null,
-      createdAt: null,
-    };
-    const line = commentResult[i];
+  const searchPrimaryGroupQs = `select group_id from group_member where user_id = ? and is_primary = true`;
+  const searchUserQs = `select name from user where user_id = ?`;
+  const searchGroupQs = `select name from group_info where group_id = ?`;
+  await Promise.all(
+    commentResult.map(async (line, i) => {
+      let commentInfo = {
+        commentId: '',
+        value: '',
+        createdBy: null,
+        createdByName: null,
+        createdByPrimaryGroupName: null,
+        createdAt: null,
+      };
 
-    const [primaryResult] = await pool.query(searchPrimaryGroupQs, [
-      line.created_by,
-    ]);
-    if (primaryResult.length === 1) {
-      const primaryGroupId = primaryResult[0].group_id;
+      const [primaryResult] = await pool.query(searchPrimaryGroupQs, [
+        line.created_by,
+      ]);
+      if (primaryResult.length === 1) {
+        const primaryGroupId = primaryResult[0].group_id;
 
-      const [groupResult] = await pool.query(searchGroupQs, [primaryGroupId]);
-      if (groupResult.length === 1) {
-        commentInfo.createdByPrimaryGroupName = groupResult[0].name;
+        const [groupResult] = await pool.query(searchGroupQs, [primaryGroupId]);
+        if (groupResult.length === 1) {
+          commentInfo.createdByPrimaryGroupName = groupResult[0].name;
+        }
       }
-    }
 
-    const [userResult] = await pool.query(searchUserQs, [line.created_by]);
-    if (userResult.length === 1) {
-      commentInfo.createdByName = userResult[0].name;
-    }
+      const [userResult] = await pool.query(searchUserQs, [line.created_by]);
+      if (userResult.length === 1) {
+        commentInfo.createdByName = userResult[0].name;
+      }
 
-    commentInfo.commentId = line.comment_id;
-    commentInfo.value = line.value;
-    commentInfo.createdBy = line.created_by;
-    commentInfo.createdAt = line.created_at;
+      commentInfo.commentId = line.comment_id;
+      commentInfo.value = line.value;
+      commentInfo.createdBy = line.created_by;
+      commentInfo.createdAt = line.created_at;
 
-    commentList[i] = commentInfo;
-  }
+      commentList[i] = commentInfo;
+    })
+  );
 
   res.send({ items: commentList });
   performance.mark('getcomments-end');
