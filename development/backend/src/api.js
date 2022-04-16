@@ -158,10 +158,7 @@ const postRecords = async (req, res) => {
     return;
   }
 
-  // mylog(user);
-
   const body = req.body;
-  // mylog(body);
 
   let [rows] = await pool.query(
     `select * from group_member where user_id = ?
@@ -170,14 +167,11 @@ const postRecords = async (req, res) => {
   );
 
   if (rows.length !== 1) {
-    // mylog('申請者のプライマリ組織の解決に失敗しました。');
     res.status(400).send();
     return;
   }
 
   const userPrimary = rows[0];
-
-  // mylog(userPrimary);
 
   const newId = uuidv4();
 
@@ -659,20 +653,7 @@ const postComments = async (req, res) => {
 };
 
 // GET categories/
-// カテゴリーの取得
-// 一度取得ご　内部で保持
-const category_items = await generateCategories();
-
-const generateCategories = async () => {
-  const items = {};
-  const [rows] = await pool.query(`select category_id, name from category`);
-
-  for (let i = 0; i < rows.length; i++) {
-    items[`${rows[i]['category_id']}`] = { name: rows[i].name };
-  }
-  return items;
-} 
-
+let category_items;
 const getCategories = async (req, res) => {
   performance.mark('getcategories-start');
   let user = await getLinkedUser(req.headers);
@@ -681,8 +662,17 @@ const getCategories = async (req, res) => {
     res.status(401).send();
     return;
   }
-  res.send({ category_items });
 
+  if (!category_items) {
+    const [rows] = await pool.query(`select * from category`);
+    const items = {};
+    for (let i = 0; i < rows.length; i++) {
+      items[`${rows[i]['category_id']}`] = { name: rows[i].name };
+    }
+    category_items = items;
+    res.send({ items });
+  }
+  res.send({ category_items });
   performance.mark('getcategories-end');
   performance.measure(
     'getCategories',

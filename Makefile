@@ -8,14 +8,14 @@ build:
 # 採点
 .PHONY: scoring
 scoring:
-	cd scoring && bash evaluate.sh
+	cd scoring; bash evaluate.sh
 
 # local apiテストを行う。
 .PHONY: lapi
 lapi:
-	docker-compose -f ./local/docker-compose-local.yaml down --rmi all
+	docker-compose -f ./local/docker-compose-local.yaml down
 	cd local; bash cpMysqlFile.sh
-	docker-compose -f ./local/docker-compose-local.yaml build --no-cache
+	docker-compose -f ./local/docker-compose-local.yaml build
 	docker-compose -f ./local/docker-compose-local.yaml up -d
 	sleep 15
 	cd local; bash localApiTestOnly.sh
