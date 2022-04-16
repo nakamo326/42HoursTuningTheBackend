@@ -4,19 +4,6 @@ const { v4: uuidv4 } = require('uuid');
 const jimp = require('jimp');
 const sharp = require('sharp');
 
-const expectCategories = {
-  1: { name: '緊急の対応が必要' },
-  2: { name: '故障・不具合(大型)' },
-  3: { name: '故障・不具合(中型・小型)' },
-  4: { name: '異常の疑い(大型)' },
-  5: { name: '異常の疑い(中型・小型)' },
-  6: { name: 'お客様からの問い合わせ' },
-  7: { name: 'オフィス外装・インフラ' },
-  8: { name: '貸与品関連' },
-  9: { name: 'オフィス備品' },
-  10: { name: 'その他' },
-};
-
 const mysql = require('mysql2/promise');
 // debug用 提出前削除 関数内のperformance.markも忘れず削除
 const { performance, PerformanceObserver } = require('perf_hooks');
@@ -671,7 +658,20 @@ const getCategories = async (req, res) => {
     return;
   }
 
-  res.send({ expectCategories });
+  const categories = {
+    1: { name: '緊急の対応が必要' },
+    2: { name: '故障・不具合(大型)' },
+    3: { name: '故障・不具合(中型・小型)' },
+    4: { name: '異常の疑い(大型)' },
+    5: { name: '異常の疑い(中型・小型)' },
+    6: { name: 'お客様からの問い合わせ' },
+    7: { name: 'オフィス外装・インフラ' },
+    8: { name: '貸与品関連' },
+    9: { name: 'オフィス備品' },
+    10: { name: 'その他' },
+  };
+
+  res.send({ categories });
   return;
 };
 
