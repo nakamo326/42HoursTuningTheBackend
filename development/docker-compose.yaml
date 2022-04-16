@@ -36,3 +36,4 @@ services:
         MYSQL_PASSWORD : "backend"
       volumes:
         - ../volume/mysql:/var/lib/mysql
+        - ../log/mysql_dev:/tmp
