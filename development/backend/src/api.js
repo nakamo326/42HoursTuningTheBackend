@@ -6,6 +6,7 @@ const jimp = require('jimp');
 const mysql = require('mysql2/promise');
 // debug用 提出前削除 関数内のperformance.markも忘れず削除
 const { performance, PerformanceObserver } = require('perf_hooks');
+const { join } = require('path');
 ///////////////////
 
 // MEMO: 設定項目はここを参考にした
@@ -341,28 +342,8 @@ const tomeActive = async (req, res) => {
     limit = 10;
   }
 
-  const searchMyGroupQs = `select * from group_member where user_id = ?`;
-  const [myGroupResult] = await pool.query(searchMyGroupQs, [user.user_id]);
-  // mylog(myGroupResult);
-
-  const targetCategoryAppGroupList = [];
-  const searchTargetQs = `select * from category_group where group_id = ?`;
-
-  for (let i = 0; i < myGroupResult.length; i++) {
-    const groupId = myGroupResult[i].group_id;
-    // mylog(groupId);
-
-    const [targetResult] = await pool.query(searchTargetQs, [groupId]);
-    for (let j = 0; j < targetResult.length; j++) {
-      const targetLine = targetResult[j];
-      // mylog(targetLine);
-
-      targetCategoryAppGroupList.push({
-        categoryId: targetLine.category_id,
-        applicationGroup: targetLine.application_group,
-      });
-    }
-  }
+  const searchTargetQs = `select category_id as categoryId,application_group as applicationGroup from category_group c inner join group_member g on c.group_id = g.group_id where g.user_id = ?`;
+  const [targetCategoryAppGroupList] = await pool.query(searchTargetQs, [user.user_id]);
 
   let searchRecordQs =
     'select record_id, title, created_by, created_at, application_group, updated_at from record where status = "open" and (category_id, application_group) in (';
