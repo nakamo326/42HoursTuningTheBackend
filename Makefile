@@ -1,8 +1,9 @@
 
-# ビルド
+#  本番環境ビルド
 .PHONY: build
 build:
-	cd development && bash build.sh
+	docker-compose -f development/docker-compose.yaml build
+	docker-compose -f development/docker-compose.yaml up -d
 
 # 採点
 .PHONY: scoring
