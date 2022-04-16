@@ -694,10 +694,16 @@ const postFiles = async (req, res) => {
 
   const binary = Buffer.from(base64Data, 'base64');
 
-  const image = await sharp(binary).jpeg({ quality: 60 }).resize(1024, 1024);
-  // .png({compressionLevel: 4});
-  await image.toFile(`${filePath}${newId}_${name}`);
+  const image = await sharp(binary)
+          .png({palette: true, quality: 80, force: false})
+          .jpeg({quality: 80, force: false});
   const metadata = await image.metadata();
+  await image.toFile(`${filePath}${newId}_${name}`, (err, info) => {
+    if (info.size < 1024) {
+      fs.writeFileSync(`${filePath}${newId}_${name}`, binary);
+    }
+  });
+
   const size =
     metadata.width < metadata.height ? metadata.width : metadata.height;
   await image
@@ -755,11 +761,11 @@ const getRecordItemFile = async (req, res) => {
   // mylog(rows[0]);
 
   const fileInfo = rows[0];
-  // mylog(fileInfo)
+  mylog(fileInfo)
 
-  const data = await sharp(fileInfo.path).toBuffer();
+  const data = fs.readFileSync(fileInfo.path);
   const base64 = data.toString('base64');
-  // const data = fs.readFileSync(fileInfo.path);
+  // const data = await sharp(fileInfo.path).png().toBuffer();
   // const base64 = data.toString('base64');
   // mylog(base64);
 
@@ -807,12 +813,10 @@ const getRecordItemFileThumbnail = async (req, res) => {
   // mylog(rows[0]);
 
   const fileInfo = rows[0];
+  mylog(fileInfo);
 
   const data = await sharp(fileInfo.path).toBuffer();
   const base64 = data.toString('base64');
-  // const data = fs.readFileSync(fileInfo.path);
-  // const base64 = data.toString('base64');
-  // mylog(base64);
 
   res.send({ data: base64, name: fileInfo.name });
   performance.mark('getrecorditemfilethumbnail-end');
