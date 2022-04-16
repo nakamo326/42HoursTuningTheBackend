@@ -664,11 +664,13 @@ const postComments = async (req, res) => {
 const category_items = await generateCategories();
 
 const generateCategories = async () => {
+  const items = {};
   const [rows] = await pool.query(`select category_id, name from category`);
 
   for (let i = 0; i < rows.length; i++) {
-    category_items[`${rows[i]['category_id']}`] = { name: rows[i].name };
+    items[`${rows[i]['category_id']}`] = { name: rows[i].name };
   }
+  return items;
 } 
 
 const getCategories = async (req, res) => {
