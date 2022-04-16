@@ -649,16 +649,16 @@ const postComments = async (req, res) => {
 
 // GET categories/
 const expectCategories = {
-  1: { name: '緊急の対応が必要' },
-  2: { name: '故障・不具合(大型)' },
-  3: { name: '故障・不具合(中型・小型)' },
-  4: { name: '異常の疑い(大型)' },
-  5: { name: '異常の疑い(中型・小型)' },
-  6: { name: 'お客様からの問い合わせ' },
-  7: { name: 'オフィス外装・インフラ' },
-  8: { name: '貸与品関連' },
-  9: { name: 'オフィス備品' },
-  10: { name: 'その他' },
+  '1': { name: '緊急の対応が必要' },
+  '2': { name: '故障・不具合(大型)' },
+  '3': { name: '故障・不具合(中型・小型)' },
+  '4': { name: '異常の疑い(大型)' },
+  '5': { name: '異常の疑い(中型・小型)' },
+  '6': { name: 'お客様からの問い合わせ' },
+  '7': { name: 'オフィス外装・インフラ' },
+  '8': { name: '貸与品関連' },
+  '9': { name: 'オフィス備品' },
+  '10': { name: 'その他' }
 };
 
 const getCategories = async (req, res) => {
@@ -669,10 +669,34 @@ const getCategories = async (req, res) => {
     res.status(401).send();
     return;
   }
-
-  res.send({ expectCategories });
-  return;
+  
+  res.send({ items: expectCategories });
 };
+
+// const getCategories = async (req, res) => {
+//   let user = await getLinkedUser(req.headers);
+
+//   if (!user) {
+//     res.status(401).send();
+//     return;
+//   }
+
+//   const [rows] = await pool.query(`select * from category`);
+
+//   for (const row of rows) {
+//     mylog(row);
+//   }
+
+//   const items = {};
+
+//   for (let i = 0; i < rows.length; i++) {
+//     items[`${rows[i]['category_id']}`] = { name: rows[i].name };
+//   }
+
+//   mylog(items);
+
+//   res.send({ items });
+// };
 
 // POST files/
 // ファイルのアップロード
@@ -761,7 +785,7 @@ const getRecordItemFile = async (req, res) => {
   // mylog(rows[0]);
 
   const fileInfo = rows[0];
-  mylog(fileInfo)
+  // mylog(fileInfo)
 
   const data = fs.readFileSync(fileInfo.path);
   const base64 = data.toString('base64');
@@ -813,7 +837,7 @@ const getRecordItemFileThumbnail = async (req, res) => {
   // mylog(rows[0]);
 
   const fileInfo = rows[0];
-  mylog(fileInfo);
+  // mylog(fileInfo);
 
   const data = await sharp(fileInfo.path).toBuffer();
   const base64 = data.toString('base64');
