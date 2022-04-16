@@ -669,8 +669,14 @@ const getCategories = async (req, res) => {
     9: { name: 'オフィス備品' },
     10: { name: 'その他' },
   };
-
-  res.send({ categories });
+  const [rows] = await pool.query(`select * from category`);
+  const items = {};
+  for (let i = 0; i < rows.length; i++) {
+    items[`${rows[i]['category_id']}`] = { name: rows[i].name };
+  }
+  res.send({ items });
+  // console.log(categories);
+  // res.send({ categories });
   return;
 };
 
