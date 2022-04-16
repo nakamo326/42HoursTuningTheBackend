@@ -562,15 +562,15 @@ const getComments = async (req, res) => {
 
   const recordId = req.params.recordId;
 
-  const commentQs = `select * from record_comment where linked_record_id = ? order by created_at desc`;
+  const commentQs = `select comment_id, value, created_by, created_at from record_comment where linked_record_id = ? order by created_at desc`;
 
   const [commentResult] = await pool.query(commentQs, [`${recordId}`]);
 
   const commentList = Array(commentResult.length);
 
-  const searchPrimaryGroupQs = `select * from group_member where user_id = ? and is_primary = true`;
-  const searchUserQs = `select * from user where user_id = ?`;
-  const searchGroupQs = `select * from group_info where group_id = ?`;
+  const searchPrimaryGroupQs = `select group_id from group_member where user_id = ? and is_primary = true`;
+  const searchUserQs = `select name from user where user_id = ?`;
+  const searchGroupQs = `select name from group_info where group_id = ?`;
   await Promise.all(
     commentResult.map(async (line, i) => {
       let commentInfo = {
