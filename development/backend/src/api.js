@@ -17,7 +17,7 @@ const mysqlOption = {
   password: 'backend',
   database: 'app',
   waitForConnections: true,
-  connectionLimit: 1000,
+  connectionLimit: 150,
 };
 const pool = mysql.createPool(mysqlOption);
 
@@ -660,6 +660,17 @@ const postComments = async (req, res) => {
 
 // GET categories/
 // カテゴリーの取得
+// 一度取得ご　内部で保持
+const category_items = await generateCategories();
+
+const generateCategories = async () => {
+  const [rows] = await pool.query(`select category_id, name from category`);
+
+  for (let i = 0; i < rows.length; i++) {
+    category_items[`${rows[i]['category_id']}`] = { name: rows[i].name };
+  }
+} 
+
 const getCategories = async (req, res) => {
   performance.mark('getcategories-start');
   let user = await getLinkedUser(req.headers);
@@ -668,16 +679,7 @@ const getCategories = async (req, res) => {
     res.status(401).send();
     return;
   }
-
-  const [rows] = await pool.query(`select * from category`);
-
-  const items = {};
-
-  for (let i = 0; i < rows.length; i++) {
-    items[`${rows[i]['category_id']}`] = { name: rows[i].name };
-  }
-
-  res.send({ items });
+  res.send({ category_items });
 
   performance.mark('getcategories-end');
   performance.measure(
