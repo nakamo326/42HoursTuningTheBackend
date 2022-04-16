@@ -18,6 +18,7 @@ services:
       command: npm run dev
       volumes:
         - ../development/backend/src:/backend/src
+        - ./file:/backend/file
     frontend:
       build:
         context: ./dummyFrontend #dummyFrontendはダミーのhtmlのみ返却します。

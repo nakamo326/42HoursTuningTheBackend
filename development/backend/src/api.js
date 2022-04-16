@@ -2,6 +2,7 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
 const jimp = require('jimp');
+const sharp = require('sharp');
 
 const mysql = require('mysql2/promise');
 // debug用 提出前削除 関数内のperformance.markも忘れず削除
@@ -688,7 +689,6 @@ const postFiles = async (req, res) => {
   }
 
   const base64Data = req.body.data;
-  // mylog(base64Data);
 
   const name = req.body.name;
 
@@ -697,19 +697,34 @@ const postFiles = async (req, res) => {
 
   const binary = Buffer.from(base64Data, 'base64');
 
-  fs.writeFileSync(`${filePath}${newId}_${name}`, binary);
+  const image = await sharp(binary)
+    .jpeg({quality: 60})
+    .png({compressionLevel: 4});
+  await image.toFile(`${filePath}${newId}_${name}`);
+  // const image = await jimp.read(binary);
+  // await image.quality(20).writeAsync(`${filePath}${newId}_${name}`);
+  // fs.writeFileSync(`${filePath}${newId}_${name}`, binary);
+  const metadata = await image.metadata();
 
-  const image = await jimp.read(fs.readFileSync(`${filePath}${newId}_${name}`));
-  // mylog(image.bitmap.width);
-  // mylog(image.bitmap.height);
+  // const image = await jimp.read(fs.readFileSync(`${filePath}${newId}_${name}`));
+  // const image = await sharp(binary);
+  // const metadata = await image.metadata();
+
+  // await image.toFile(`${filePath}${newId}_${name}`);
 
   const size =
-    image.bitmap.width < image.bitmap.height
-      ? image.bitmap.width
-      : image.bitmap.height;
-  await image.cover(size, size);
+    metadata.width < metadata.height
+      ? metadata.width
+      : metadata.height;
+  await image.resize(size, size).toFile(`${filePath}${newThumbId}_thumb_${name}`);
 
-  await image.writeAsync(`${filePath}${newThumbId}_thumb_${name}`);
+  // const size =
+  // image.bitmap.width < image.bitmap.height
+  //   ? image.bitmap.width
+  //   : image.bitmap.height;
+  // await image.cover(size, size).writeAsync(`${filePath}${newThumbId}_thumb_${name}`);
+
+  // await image.writeAsync(`${filePath}${newThumbId}_thumb_${name}`);
 
   await pool.query(
     `insert into file (file_id, path, name)
@@ -762,9 +777,12 @@ const getRecordItemFile = async (req, res) => {
   // mylog(rows[0]);
 
   const fileInfo = rows[0];
+  // mylog(fileInfo)
 
-  const data = fs.readFileSync(fileInfo.path);
+  const data = await sharp(fileInfo.path).toBuffer();
   const base64 = data.toString('base64');
+  // const data = fs.readFileSync(fileInfo.path);
+  // const base64 = data.toString('base64');
   // mylog(base64);
 
   res.send({ data: base64, name: fileInfo.name });
@@ -812,8 +830,10 @@ const getRecordItemFileThumbnail = async (req, res) => {
 
   const fileInfo = rows[0];
 
-  const data = fs.readFileSync(fileInfo.path);
+  const data = await sharp(fileInfo.path).toBuffer();
   const base64 = data.toString('base64');
+  // const data = fs.readFileSync(fileInfo.path);
+  // const base64 = data.toString('base64');
   // mylog(base64);
 
   res.send({ data: base64, name: fileInfo.name });
