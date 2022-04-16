@@ -650,7 +650,6 @@ const postComments = async (req, res) => {
 // GET categories/
 
 const getCategories = async (req, res) => {
-  performance.mark('getcategories-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
