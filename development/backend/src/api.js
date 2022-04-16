@@ -648,7 +648,7 @@ const postComments = async (req, res) => {
 };
 
 // GET categories/
-let category_items;
+// let category_items;
 const getCategories = async (req, res) => {
   performance.mark('getcategories-start');
   let user = await getLinkedUser(req.headers);
@@ -658,16 +658,16 @@ const getCategories = async (req, res) => {
     return;
   }
 
-  if (!category_items) {
-    const [rows] = await pool.query(`select * from category`);
-    const items = {};
-    for (let i = 0; i < rows.length; i++) {
-      items[`${rows[i]['category_id']}`] = { name: rows[i].name };
-    }
-    category_items = items;
-    res.send({ items });
+  // if (!category_items) {
+  const [rows] = await pool.query(`select * from category`);
+  const items = {};
+  for (let i = 0; i < rows.length; i++) {
+    items[`${rows[i]['category_id']}`] = { name: rows[i].name };
   }
-  res.send({ category_items });
+  // category_items = items;
+  res.send({ items });
+  // }
+  // res.send({ category_items });
   performance.mark('getcategories-end');
   performance.measure(
     'getCategories',

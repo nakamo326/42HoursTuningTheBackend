@@ -1,0 +1,21 @@
+Count: 103  Time=45.00s (4635s)  Lock=0.00s (0s)  Rows=1.0 (103), backend[backend]@[172.24.0.3]
+  select count(*) from record where status = "S" and (category_id, application_group) in ( (N, N), (N, N), (N, N), (N, N), (N, N) )
+
+Count: 213  Time=9.35s (1992s)  Lock=0.00s (0s)  Rows=1.0 (213), backend[backend]@[172.24.0.3]
+  select count(*) from record where status = "S"
+
+Count: 87  Time=9.74s (847s)  Lock=0.00s (0s)  Rows=10.0 (870), backend[backend]@[172.24.0.3]
+  select record_id, title, created_by, created_at, application_group, updated_at from record where status = "S" and (category_id, application_group) in ( (N, N), (N, N), (N, N), (N, N), (N, N) ) order by updated_at desc, record_id  limit N offset N
+
+Count: 64  Time=1.58s (101s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.24.0.3]
+  update record set updated_at = now() where record_id = 'S'
+
+Count: 52  Time=1.89s (98s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.24.0.3]
+  insert into record
+  (record_id, status, title, detail, category_id, application_group, created_by, created_at, updated_at)
+  values ('S', "S", 'S', 'S', 'S', N, N, now(), now())
+
+Count: 36  Time=1.82s (65s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.24.0.3]
+  insert into record_comment
+  (linked_record_id, value, created_by, created_at)
+  values ('S','S',N, now())
