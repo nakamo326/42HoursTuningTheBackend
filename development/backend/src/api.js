@@ -341,10 +341,28 @@ const tomeActive = async (req, res) => {
     limit = 10;
   }
 
-  const searchMyGroupQs = `select group_id from group_member where user_id = ?`;
-  const searchTargetQs = `select category_id as categoryId,application_group as applicationGroup from category_group where group_id in (${searchMyGroupQs})`;
-  
-  const [targetCategoryAppGroupList] = await pool.query(searchTargetQs, [user.user_id]);
+  const searchMyGroupQs = `select * from group_member where user_id = ?`;
+  const [myGroupResult] = await pool.query(searchMyGroupQs, [user.user_id]);
+  // mylog(myGroupResult);
+
+  const targetCategoryAppGroupList = [];
+  const searchTargetQs = `select * from category_group where group_id = ?`;
+
+  for (let i = 0; i < myGroupResult.length; i++) {
+    const groupId = myGroupResult[i].group_id;
+    // mylog(groupId);
+
+    const [targetResult] = await pool.query(searchTargetQs, [groupId]);
+    for (let j = 0; j < targetResult.length; j++) {
+      const targetLine = targetResult[j];
+      // mylog(targetLine);
+
+      targetCategoryAppGroupList.push({
+        categoryId: targetLine.category_id,
+        applicationGroup: targetLine.application_group,
+      });
+    }
+  }
 
   let searchRecordQs =
     'select record_id, title, created_by, created_at, application_group, updated_at from record where status = "open" and (category_id, application_group) in (';
