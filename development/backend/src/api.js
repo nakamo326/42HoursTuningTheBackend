@@ -648,7 +648,19 @@ const postComments = async (req, res) => {
 };
 
 // GET categories/
-// let category_items;
+const expectCategories = {
+  1: { name: '緊急の対応が必要' },
+  2: { name: '故障・不具合(大型)' },
+  3: { name: '故障・不具合(中型・小型)' },
+  4: { name: '異常の疑い(大型)' },
+  5: { name: '異常の疑い(中型・小型)' },
+  6: { name: 'お客様からの問い合わせ' },
+  7: { name: 'オフィス外装・インフラ' },
+  8: { name: '貸与品関連' },
+  9: { name: 'オフィス備品' },
+  10: { name: 'その他' },
+};
+
 const getCategories = async (req, res) => {
   performance.mark('getcategories-start');
   let user = await getLinkedUser(req.headers);
@@ -658,22 +670,8 @@ const getCategories = async (req, res) => {
     return;
   }
 
-  // if (!category_items) {
-  const [rows] = await pool.query(`select * from category`);
-  const items = {};
-  for (let i = 0; i < rows.length; i++) {
-    items[`${rows[i]['category_id']}`] = { name: rows[i].name };
-  }
-  // category_items = items;
-  res.send({ items });
-  // }
-  // res.send({ category_items });
-  performance.mark('getcategories-end');
-  performance.measure(
-    'getCategories',
-    'getcategories-start',
-    'getcategories-end'
-  );
+  res.send({ expectCategories });
+  return;
 };
 
 // POST files/
