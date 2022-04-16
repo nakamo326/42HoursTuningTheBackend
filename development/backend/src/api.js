@@ -671,10 +671,6 @@ const getCategories = async (req, res) => {
 
   const [rows] = await pool.query(`select * from category`);
 
-  for (const row of rows) {
-    // mylog(row);
-  }
-
   const items = {};
 
   for (let i = 0; i < rows.length; i++) {
@@ -682,6 +678,7 @@ const getCategories = async (req, res) => {
   }
 
   res.send({ items });
+
   performance.mark('getcategories-end');
   performance.measure(
     'getCategories',
