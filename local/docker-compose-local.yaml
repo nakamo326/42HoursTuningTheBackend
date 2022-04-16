@@ -8,6 +8,8 @@ services:
           - target: 80
             published: 8080
             protocol: tcp
+      volumes:
+           - ../log/nginx_local:/var/log/nginx
     backend:
       init: true
       build:

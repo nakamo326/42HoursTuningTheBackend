@@ -4,7 +4,9 @@ const { v4: uuidv4 } = require('uuid');
 const jimp = require('jimp');
 
 const mysql = require('mysql2/promise');
+// debug用 提出前削除 関数内のperformance.markも忘れず削除
 const { performance, PerformanceObserver } = require('perf_hooks');
+///////////////////
 
 // MEMO: 設定項目はここを参考にした
 // https://github.com/sidorares/node-mysql2#api-and-configuration
@@ -110,6 +112,7 @@ const getItems = async (user, recordResult) => {
   return items;
 };
 
+// debug用 提出前削除
 // パフォーマンス測定関数
 // https://dev.to/bearer/measuring-performance-in-node-js-with-performance-hooks-585p
 const perfObserver = new PerformanceObserver((items) => {
@@ -119,6 +122,7 @@ const perfObserver = new PerformanceObserver((items) => {
 });
 
 perfObserver.observe({ entryTypes: ['measure'], buffer: true });
+//////////////////
 
 const getLinkedUser = async (headers) => {
   performance.mark('getlinkeduser-start');
