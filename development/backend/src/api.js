@@ -696,34 +696,15 @@ const postFiles = async (req, res) => {
 
   const binary = Buffer.from(base64Data, 'base64');
 
-  const image = await sharp(binary)
-    .jpeg({quality: 60})
-    .png({compressionLevel: 4});
+  const image = await sharp(binary).jpeg({ quality: 60 }).resize(1024, 1024);
+  // .png({compressionLevel: 4});
   await image.toFile(`${filePath}${newId}_${name}`);
-  // const image = await jimp.read(binary);
-  // await image.quality(20).writeAsync(`${filePath}${newId}_${name}`);
-  // fs.writeFileSync(`${filePath}${newId}_${name}`, binary);
   const metadata = await image.metadata();
-
-  // const image = await jimp.read(fs.readFileSync(`${filePath}${newId}_${name}`));
-  // const image = await sharp(binary);
-  // const metadata = await image.metadata();
-
-  // await image.toFile(`${filePath}${newId}_${name}`);
-
   const size =
-    metadata.width < metadata.height
-      ? metadata.width
-      : metadata.height;
-  await image.resize(size, size).toFile(`${filePath}${newThumbId}_thumb_${name}`);
-
-  // const size =
-  // image.bitmap.width < image.bitmap.height
-  //   ? image.bitmap.width
-  //   : image.bitmap.height;
-  // await image.cover(size, size).writeAsync(`${filePath}${newThumbId}_thumb_${name}`);
-
-  // await image.writeAsync(`${filePath}${newThumbId}_thumb_${name}`);
+    metadata.width < metadata.height ? metadata.width : metadata.height;
+  await image
+    .resize(size, size)
+    .toFile(`${filePath}${newThumbId}_thumb_${name}`);
 
   await pool.query(
     `insert into file (file_id, path, name)
