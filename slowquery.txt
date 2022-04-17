@@ -1,21 +1,127 @@
-Count: 103  Time=45.00s (4635s)  Lock=0.00s (0s)  Rows=1.0 (103), backend[backend]@[172.24.0.3]
-  select count(*) from record where status = "S" and (category_id, application_group) in ( (N, N), (N, N), (N, N), (N, N), (N, N) )
+root@ef48d7104832:/# mysqldumpslow -s t /tmp/slow.log
 
-Count: 213  Time=9.35s (1992s)  Lock=0.00s (0s)  Rows=1.0 (213), backend[backend]@[172.24.0.3]
+Reading mysql slow query log from /tmp/slow.log
+Count: 144  Time=37.99s (5470s)  Lock=0.00s (0s)  Rows=1.0 (144), backend[backend]@[172.22.0.4]
   select count(*) from record where status = "S"
 
-Count: 87  Time=9.74s (847s)  Lock=0.00s (0s)  Rows=10.0 (870), backend[backend]@[172.24.0.3]
-  select record_id, title, created_by, created_at, application_group, updated_at from record where status = "S" and (category_id, application_group) in ( (N, N), (N, N), (N, N), (N, N), (N, N) ) order by updated_at desc, record_id  limit N offset N
+Count: 81  Time=13.61s (1102s)  Lock=0.00s (0s)  Rows=1.0 (81), backend[backend]@[172.22.0.4]
+  select count(*) from record_comment where linked_record_id = 'S'
 
-Count: 64  Time=1.58s (101s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.24.0.3]
+Count: 108  Time=2.64s (285s)  Lock=0.00s (0s)  Rows=10.0 (1080), backend[backend]@[172.22.0.4]
+  select record_id, title, created_by, created_at, r.application_group as application_group, updated_at 
+  from record as r
+  inner join
+  (
+  select category_id, application_group
+  from category_group as c 
+  inner join group_member as g 
+  on c.group_id = g.group_id 
+  where g.user_id = N  
+  ) as t
+  on r.category_id = t.category_id
+  and r.application_group = t.application_group
+  where status = "S"
+  order by updated_at desc, record_id  
+  limit N
+  offset N
+
+Count: 103  Time=2.57s (264s)  Lock=0.00s (0s)  Rows=1.0 (103), backend[backend]@[172.22.0.4]
+  select count(*) 
+  from record as r
+  inner join
+  (
+  select category_id, application_group
+  from category_group as c 
+  inner join group_member as g 
+  on c.group_id = g.group_id 
+  where g.user_id = N  
+  ) as t
+  on r.category_id = t.category_id
+  and r.application_group = t.application_group
+  where status = "S"
+
+Count: 58  Time=3.49s (202s)  Lock=0.00s (0s)  Rows=0.9 (55), backend[backend]@[172.22.0.4]
+  select item_id from record_item_file where linked_record_id = 'S' order by item_id asc limit N
+
+Count: 96  Time=1.97s (189s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.22.0.4]
   update record set updated_at = now() where record_id = 'S'
 
-Count: 52  Time=1.89s (98s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.24.0.3]
+Count: 92  Time=1.80s (166s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.22.0.4]
   insert into record
   (record_id, status, title, detail, category_id, application_group, created_by, created_at, updated_at)
   values ('S', "S", 'S', 'S', 'S', N, N, now(), now())
 
-Count: 36  Time=1.82s (65s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.24.0.3]
+Count: 74  Time=1.52s (112s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.22.0.4]
   insert into record_comment
   (linked_record_id, value, created_by, created_at)
   values ('S','S',N, now())
+
+Count: 40  Time=2.35s (93s)  Lock=0.00s (0s)  Rows=10.0 (400), backend[backend]@[172.22.0.4]
+  select record_id, title, created_by, created_at, application_group, updated_at from record where status = "S" order by updated_at desc, record_id asc limit N offset N
+
+Count: 9  Time=5.76s (51s)  Lock=0.00s (0s)  Rows=4.0 (36), backend[backend]@[172.22.0.4]
+  select comment_id, value, created_by, created_at from record_comment where linked_record_id = 'S' order by created_at desc
+
+Count: 26  Time=1.33s (34s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.22.0.4]
+  insert into record_item_file
+  (linked_record_id, linked_file_id, linked_thumbnail_file_id, created_at)
+  values ('S', 'S', 'S', now())
+
+Count: 12  Time=1.72s (20s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.22.0.4]
+  update record set status = 'S' where record_id = 'S'
+
+Count: 12  Time=1.26s (15s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.22.0.4]
+  insert into file (file_id, path, name)
+  values ('S', 'S', 'S')
+
+Count: 1  Time=13.19s (13s)  Lock=0.00s (0s)  Rows=1.0 (1), backend[backend]@[172.22.0.4]
+  select count(*) from record where created_by = N and status = "S"
+
+Count: 2  Time=6.07s (12s)  Lock=0.00s (0s)  Rows=1.5 (3), backend[backend]@[172.22.0.4]
+  select * from record_item_file where linked_record_id = 'S' order by item_id asc
+
+Count: 5  Time=1.80s (9s)  Lock=0.00s (0s)  Rows=1.0 (5), backend[backend]@[172.22.0.4]
+  select record_id, title, created_by, created_at, application_group, updated_at from record where created_by = N and status = "S" order by updated_at desc, record_id asc limit N offset N
+
+Count: 6  Time=1.43s (8s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.22.0.4]
+  INSERT INTO record_last_access
+  (record_id, user_id, access_time)
+  VALUES
+  ('S', 'S', now())
+  ON DUPLICATE KEY UPDATE access_time = now()
+
+Count: 6  Time=1.12s (6s)  Lock=0.00s (0s)  Rows=1.0 (6), backend[backend]@[172.22.0.4]
+  select * from session where value = 'S'
+
+Count: 4  Time=1.20s (4s)  Lock=0.00s (0s)  Rows=1.0 (4), backend[backend]@[172.22.0.4]
+  select f.name, f.path from record_item_file r
+  inner join file f
+  on
+  r.linked_record_id = 'S'
+  and
+  r.item_id = 'S'
+  and
+  r.linked_file_id = f.file_id
+
+Count: 4  Time=1.16s (4s)  Lock=0.00s (0s)  Rows=0.0 (0), backend[backend]@[172.22.0.4]
+  select * from record_last_access where user_id = N and record_id = 'S'
+
+Count: 3  Time=1.09s (3s)  Lock=0.00s (0s)  Rows=1.0 (3), backend[backend]@[172.22.0.4]
+  select f.name, f.path from record_item_file r
+  inner join file f
+  on
+  r.linked_record_id = 'S'
+  and
+  r.item_id = 'S'
+  and
+  r.linked_thumbnail_file_id = f.file_id
+
+Count: 3  Time=1.07s (3s)  Lock=0.00s (0s)  Rows=1.0 (3), backend[backend]@[172.22.0.4]
+  select name from user where user_id = N
+
+Count: 1  Time=1.01s (1s)  Lock=0.00s (0s)  Rows=1.0 (1), backend[backend]@[172.22.0.4]
+  select * from record where record_id = 'S'
+
+Count: 1  Time=1.01s (1s)  Lock=0.00s (0s)  Rows=1.0 (1), backend[backend]@[172.22.0.4]
+  select * from group_member where user_id = N
+  AND is_primary = true
