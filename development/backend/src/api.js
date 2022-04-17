@@ -14,19 +14,9 @@ const mysqlOption = {
   password: 'backend',
   database: 'app',
   waitForConnections: true,
-  connectionLimit: 1000,
+  connectionLimit: 2000,
 };
 const pool = mysql.createPool(mysqlOption);
-
-const mylog = (obj) => {
-  if (Array.isArray(obj)) {
-    for (const e of obj) {
-      console.log(e);
-    }
-    return;
-  }
-  console.log(obj);
-};
 
 const getItems = async (user, recordResult) => {
   const items = Array(recordResult.length);
@@ -630,8 +620,8 @@ const postFiles = async (req, res) => {
   const binary = Buffer.from(base64Data, 'base64');
 
   const image = await sharp(binary)
-    .png({ palette: true, quality: 80, force: false })
-    .jpeg({ quality: 80, force: false });
+    .png({ palette: true, quality: 60, force: false })
+    .jpeg({ quality: 60, force: false });
   const metadata = await image.metadata();
   await image.toFile(`${filePath}${newId}_${name}`, (err, info) => {
     if (info.size < 1024) {
