@@ -648,6 +648,7 @@ const postComments = async (req, res) => {
 };
 
 // GET categories/
+
 const expectCategories = {
   '1': { name: '緊急の対応が必要' },
   '2': { name: '故障・不具合(大型)' },
@@ -662,15 +663,15 @@ const expectCategories = {
 };
 
 const getCategories = async (req, res) => {
-  performance.mark('getcategories-start');
   let user = await getLinkedUser(req.headers);
 
   if (!user) {
     res.status(401).send();
     return;
   }
-  
+
   res.send({ items: expectCategories });
+
 };
 
 // const getCategories = async (req, res) => {
