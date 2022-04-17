@@ -620,8 +620,8 @@ const postFiles = async (req, res) => {
   const binary = Buffer.from(base64Data, 'base64');
 
   const image = await sharp(binary)
-    .png({ palette: true, quality: 60, force: false })
-    .jpeg({ quality: 60, force: false });
+    .png({ palette: true, quality: 90, force: false })
+    .jpeg({ quality: 90, force: false });
   const metadata = await image.metadata();
   await image.toFile(`${filePath}${newId}_${name}`, (err, info) => {
     if (info.size < 1024) {
