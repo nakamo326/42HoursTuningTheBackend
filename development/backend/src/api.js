@@ -417,13 +417,17 @@ const allActive = async (req, res) => {
   // TODO: 先に実行
   const searchRecordQs = `select record_id, title, created_by, created_at, application_group, updated_at from record where status = "open" order by updated_at desc, record_id asc limit ? offset ?`;
   const r = pool.query(searchRecordQs, [limit, offset]);
-
-  const recordCountQs = 'select 1 from record where status = "open"';
-  const [recordCountResult] = await pool.query(recordCountQs);
-  let count = recordCountResult.length;
+  const recordCountQs = 'select count(*) from record where status = "open"';
+  const s = pool.query(recordCountQs);
 
   const [recordResult] = await r;
   const i = getItems(user, recordResult);
+
+  const [recordCountResult] = await s;
+  let count = 0;
+  if (recordCountResult.length === 1) {
+    count = recordCountResult[0]['count(*)'];
+  }
 
   const items = await i;
   res.send({ count: count, items: items });
@@ -457,10 +461,14 @@ const allClosed = async (req, res) => {
 
   const items = await getItems(user, recordResult);
 
-  const recordCountQs = 'select 1 from record where status = "closed"';
+  let count = 0;
+
+  const recordCountQs = 'select count(*) from record where status = "closed"';
 
   const [recordCountResult] = await pool.query(recordCountQs);
-  let count = recordCountResult.length;
+  if (recordCountResult.length === 1) {
+    count = recordCountResult[0]['count(*)'];
+  }
 
   res.send({ count: count, items: items });
   performance.mark('allclosed-end');
