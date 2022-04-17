@@ -649,6 +649,19 @@ const postComments = async (req, res) => {
 
 // GET categories/
 
+const expectCategories = {
+  '1': { name: '緊急の対応が必要' },
+  '2': { name: '故障・不具合(大型)' },
+  '3': { name: '故障・不具合(中型・小型)' },
+  '4': { name: '異常の疑い(大型)' },
+  '5': { name: '異常の疑い(中型・小型)' },
+  '6': { name: 'お客様からの問い合わせ' },
+  '7': { name: 'オフィス外装・インフラ' },
+  '8': { name: '貸与品関連' },
+  '9': { name: 'オフィス備品' },
+  '10': { name: 'その他' }
+};
+
 const getCategories = async (req, res) => {
   let user = await getLinkedUser(req.headers);
 
@@ -657,20 +670,34 @@ const getCategories = async (req, res) => {
     return;
   }
 
-  const items = {
-    1: { name: '緊急の対応が必要' },
-    2: { name: '故障・不具合(大型)' },
-    3: { name: '故障・不具合(中型・小型)' },
-    4: { name: '異常の疑い(大型)' },
-    5: { name: '異常の疑い(中型・小型)' },
-    6: { name: 'お客様からの問い合わせ' },
-    7: { name: 'オフィス外装・インフラ' },
-    8: { name: '貸与品関連' },
-    9: { name: 'オフィス備品' },
-    10: { name: 'その他' },
-  };
-  res.send({ items });
+  res.send({ items: expectCategories });
+
 };
+
+// const getCategories = async (req, res) => {
+//   let user = await getLinkedUser(req.headers);
+
+//   if (!user) {
+//     res.status(401).send();
+//     return;
+//   }
+
+//   const [rows] = await pool.query(`select * from category`);
+
+//   for (const row of rows) {
+//     mylog(row);
+//   }
+
+//   const items = {};
+
+//   for (let i = 0; i < rows.length; i++) {
+//     items[`${rows[i]['category_id']}`] = { name: rows[i].name };
+//   }
+
+//   mylog(items);
+
+//   res.send({ items });
+// };
 
 // POST files/
 // ファイルのアップロード
@@ -692,10 +719,16 @@ const postFiles = async (req, res) => {
 
   const binary = Buffer.from(base64Data, 'base64');
 
-  const image = await sharp(binary).jpeg({ quality: 60 }).resize(1024, 1024);
-  // .png({compressionLevel: 4});
-  await image.toFile(`${filePath}${newId}_${name}`);
+  const image = await sharp(binary)
+          .png({palette: true, quality: 80, force: false})
+          .jpeg({quality: 80, force: false});
   const metadata = await image.metadata();
+  await image.toFile(`${filePath}${newId}_${name}`, (err, info) => {
+    if (info.size < 1024) {
+      fs.writeFileSync(`${filePath}${newId}_${name}`, binary);
+    }
+  });
+
   const size =
     metadata.width < metadata.height ? metadata.width : metadata.height;
   await image
@@ -755,9 +788,9 @@ const getRecordItemFile = async (req, res) => {
   const fileInfo = rows[0];
   // mylog(fileInfo)
 
-  const data = await sharp(fileInfo.path).toBuffer();
+  const data = fs.readFileSync(fileInfo.path);
   const base64 = data.toString('base64');
-  // const data = fs.readFileSync(fileInfo.path);
+  // const data = await sharp(fileInfo.path).png().toBuffer();
   // const base64 = data.toString('base64');
   // mylog(base64);
 
@@ -805,12 +838,10 @@ const getRecordItemFileThumbnail = async (req, res) => {
   // mylog(rows[0]);
 
   const fileInfo = rows[0];
+  // mylog(fileInfo);
 
   const data = await sharp(fileInfo.path).toBuffer();
   const base64 = data.toString('base64');
-  // const data = fs.readFileSync(fileInfo.path);
-  // const base64 = data.toString('base64');
-  // mylog(base64);
 
   res.send({ data: base64, name: fileInfo.name });
   performance.mark('getrecorditemfilethumbnail-end');
