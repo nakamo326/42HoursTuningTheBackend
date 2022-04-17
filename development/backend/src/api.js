@@ -456,14 +456,11 @@ const allClosed = async (req, res) => {
   // mylog(recordResult);
 
   const items = await getItems(user, recordResult);
-  let count = 0;
 
-  const recordCountQs = 'select count(*) from record where status = "closed"';
+  const recordCountQs = 'select 1 from record where status = "closed"';
 
   const [recordCountResult] = await pool.query(recordCountQs);
-  if (recordCountResult.length === 1) {
-    count = recordCountResult[0]['count(*)'];
-  }
+  let count = recordCountResult.length;
 
   res.send({ count: count, items: items });
   performance.mark('allclosed-end');
