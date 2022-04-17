@@ -13,3 +13,6 @@ ALTER TABLE `session` ADD INDEX idx1(`value`);
 
 -- record_comment
 ALTER TABLE `record_comment` ADD INDEX idx1(`linked_record_id`);
+
+-- -- group_member
+ALTER TABLE `group_member` ADD INDEX idx1(`user_id`, `is_primary`);
